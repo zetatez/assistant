@@ -1,0 +1,1729 @@
+basePath: /
+definitions:
+  assistant_internal_app_repo.CreateTodoListParams:
+    properties:
+      content:
+        type: string
+      deadline:
+        type: string
+      title:
+        type: string
+    type: object
+  assistant_internal_app_repo.CreateUserParams:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      user_name:
+        type: string
+    type: object
+  assistant_internal_app_repo.ListTodoListsParams:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+    type: object
+  assistant_internal_app_repo.ListUsersParams:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+    type: object
+  assistant_internal_app_repo.SearchTodoListsByContentParams:
+    properties:
+      content:
+        type: string
+      limit:
+        type: integer
+      offset:
+        type: integer
+    type: object
+  assistant_internal_app_repo.SearchTodoListsByDeadlineLTParams:
+    properties:
+      deadline:
+        type: string
+      limit:
+        type: integer
+      offset:
+        type: integer
+    type: object
+  assistant_internal_app_repo.SearchTodoListsByTitleAndContentParams:
+    properties:
+      content:
+        type: string
+      limit:
+        type: integer
+      offset:
+        type: integer
+      title:
+        type: string
+    type: object
+  assistant_internal_app_repo.SearchTodoListsByTitleParams:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      title:
+        type: string
+    type: object
+  assistant_internal_app_repo.SearchUsersByEmailParams:
+    properties:
+      email:
+        type: string
+      limit:
+        type: integer
+      offset:
+        type: integer
+    type: object
+  assistant_internal_app_repo.SearchUsersByUserNameParams:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      user_name:
+        type: string
+    type: object
+  assistant_internal_app_repo.TodoListTaskStatus:
+    enum:
+    - PENDING
+    - IN_PROGRESS
+    - COMPLETED
+    type: string
+    x-enum-varnames:
+    - TodoListTaskStatusPENDING
+    - TodoListTaskStatusINPROGRESS
+    - TodoListTaskStatusCOMPLETED
+  assistant_internal_app_repo.UpdateTodoListByIDParams:
+    properties:
+      content:
+        type: string
+      deadline:
+        type: string
+      id:
+        type: integer
+      priority:
+        type: integer
+      progress:
+        type: integer
+      task_status:
+        $ref: '#/definitions/assistant_internal_app_repo.TodoListTaskStatus'
+      title:
+        type: string
+    type: object
+  assistant_internal_app_repo.UpdateUserByIDParams:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      password:
+        type: string
+      user_name:
+        type: string
+    type: object
+  assistant_pkg_response.Response:
+    properties:
+      code:
+        type: integer
+      data:
+        description: 仅成功时返回
+      message:
+        type: string
+    type: object
+  internal_app_modules_task_orchestration.CreateScheduleRequest:
+    properties:
+      cron_expr:
+        type: string
+      description:
+        type: string
+      execute_at:
+        type: string
+      input_params:
+        items:
+          type: integer
+        type: array
+      interval_seconds:
+        type: integer
+      name:
+        type: string
+      schedule_type:
+        type: string
+      workflow_def_id:
+        type: integer
+    required:
+    - name
+    - schedule_type
+    - workflow_def_id
+    type: object
+  internal_app_modules_task_orchestration.CreateTaskAtomicRequest:
+    properties:
+      builtin_config:
+        items:
+          type: integer
+        type: array
+      description:
+        type: string
+      env_vars:
+        items:
+          type: integer
+        type: array
+      http_config:
+        items:
+          type: integer
+        type: array
+      is_rollback_supported:
+        type: boolean
+      name:
+        type: string
+      output_schema:
+        items:
+          type: integer
+        type: array
+      parameters:
+        items:
+          type: integer
+        type: array
+      retry_count:
+        type: integer
+      retry_interval:
+        type: integer
+      rollback_script_content:
+        type: string
+      rollback_script_type:
+        type: string
+      script_content:
+        type: string
+      script_type:
+        type: string
+      task_category:
+        type: string
+      timeout:
+        type: integer
+      working_dir:
+        type: string
+    required:
+    - name
+    - script_content
+    - task_category
+    type: object
+  internal_app_modules_task_orchestration.CreateWorkflowRequest:
+    properties:
+      description:
+        type: string
+      graph_config:
+        items:
+          type: integer
+        type: array
+      name:
+        type: string
+      notification_config:
+        items:
+          type: integer
+        type: array
+      on_error_strategy:
+        type: string
+      parameters:
+        items:
+          type: integer
+        type: array
+      timeout:
+        type: integer
+      workflow_type:
+        type: string
+    required:
+    - graph_config
+    - name
+    type: object
+  internal_app_modules_task_orchestration.StartWorkflowRequest:
+    properties:
+      execution_mode:
+        type: string
+      input_params:
+        items:
+          type: integer
+        type: array
+      priority:
+        type: integer
+    type: object
+host: localhost:1234
+info:
+  contact: {}
+  description: Example Swagger setup for Golang Gin.
+  title: Assistant API
+  version: "1.0"
+paths:
+  /schedule/create:
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的任务调度，支持 Cron/Interval/Once 三种类型
+      parameters:
+      - description: 调度创建参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_modules_task_orchestration.CreateScheduleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 创建任务调度
+      tags:
+      - 任务调度
+  /schedule/delete/{id}:
+    delete:
+      description: 根据 ID 删除任务调度
+      parameters:
+      - description: 调度ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 删除任务调度
+      tags:
+      - 任务调度
+  /schedule/disable/{id}:
+    post:
+      description: |-
+        根据 ID 禁用任务调度
+        根据 ID 禁用任务调度
+      parameters:
+      - description: 调度ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 调度ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 禁用任务调度
+      tags:
+      - 任务调度
+      - 任务调度
+  /schedule/enable/{id}:
+    post:
+      description: 根据 ID 启用已禁用的任务调度
+      parameters:
+      - description: 调度ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 启用任务调度
+      tags:
+      - 任务调度
+  /schedule/get/{id}:
+    get:
+      description: 根据 ID 获取任务调度详细信息
+      parameters:
+      - description: 调度ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "404":
+          description: 调度不存在
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取任务调度详情
+      tags:
+      - 任务调度
+  /schedule/list:
+    get:
+      consumes:
+      - application/json
+      description: 分页查询任务调度列表
+      parameters:
+      - default: 20
+        description: 每页数量 (默认20, 最大100)
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: 偏移量
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取任务调度列表
+      tags:
+      - 任务调度
+  /schedule/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: 根据 ID 更新任务调度信息
+      parameters:
+      - description: 调度ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_modules_task_orchestration.CreateScheduleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 更新任务调度
+      tags:
+      - 任务调度
+  /task_atomic/count:
+    get:
+      description: 统计系统中所有启用的原子任务数量
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取原子任务总数
+      tags:
+      - 原子任务管理
+  /task_atomic/create:
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的原子任务，支持 Shell/Python/Lua 脚本或 HTTP API 调用
+      parameters:
+      - description: 原子任务创建参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_modules_task_orchestration.CreateTaskAtomicRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 创建原子任务
+      tags:
+      - 原子任务管理
+  /task_atomic/delete/{id}:
+    delete:
+      description: 根据 ID 删除原子任务
+      parameters:
+      - description: 原子任务ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 删除原子任务
+      tags:
+      - 原子任务管理
+  /task_atomic/get/{id}:
+    get:
+      description: 根据 ID 获取原子任务详细信息
+      parameters:
+      - description: 原子任务ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "404":
+          description: 任务不存在
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取原子任务详情
+      tags:
+      - 原子任务管理
+  /task_atomic/list:
+    get:
+      consumes:
+      - application/json
+      description: 分页查询原子任务列表
+      parameters:
+      - default: 20
+        description: 每页数量 (默认20, 最大100)
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: 偏移量
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取原子任务列表
+      tags:
+      - 原子任务管理
+  /task_atomic/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: 根据 ID 更新原子任务信息
+      parameters:
+      - description: 原子任务ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_modules_task_orchestration.CreateTaskAtomicRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 更新原子任务
+      tags:
+      - 原子任务管理
+  /todo_list/complete/{id}:
+    post:
+      description: 根据 ID 将 Todo 进度设为100，状态设为COMPLETED
+      parameters:
+      - description: 待办事项ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 完成待办事项
+      tags:
+      - 待办事项
+  /todo_list/count:
+    get:
+      description: 统计系统中所有 Todo 的数量
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取待办事项总数
+      tags:
+      - 待办事项
+  /todo_list/create:
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的 Todo 项
+      parameters:
+      - description: 创建参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.CreateTodoListParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 创建待办事项
+      tags:
+      - 待办事项
+  /todo_list/delete/{id}:
+    delete:
+      description: 根据 ID 删除 Todo 项
+      parameters:
+      - description: 待办事项ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 删除待办事项
+      tags:
+      - 待办事项
+  /todo_list/get/{id}:
+    get:
+      description: 根据 ID 获取单个 Todo 详情
+      parameters:
+      - description: 待办事项ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取待办事项详情
+      tags:
+      - 待办事项
+  /todo_list/list:
+    get:
+      consumes:
+      - application/json
+      description: 支持分页、排序的 Todo 列表查询
+      parameters:
+      - description: 查询参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.ListTodoListsParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取待办事项列表
+      tags:
+      - 待办事项
+  /todo_list/priority/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: 根据 ID 更新 Todo 优先级 (1-10, 越高越紧急)
+      parameters:
+      - description: 待办事项ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 优先级 1-10
+        in: query
+        name: priority
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 更新待办事项优先级
+      tags:
+      - 待办事项
+  /todo_list/progress/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: 根据 ID 更新 Todo 进度，进度100时自动设为COMPLETED
+      parameters:
+      - description: 待办事项ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 进度 0-100
+        in: query
+        name: progress
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 更新待办事项进度
+      tags:
+      - 待办事项
+  /todo_list/search_by_content:
+    post:
+      consumes:
+      - application/json
+      description: 根据内容关键字模糊查询 Todo
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.SearchTodoListsByContentParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 按内容搜索待办事项
+      tags:
+      - 待办事项
+  /todo_list/search_by_deadline_lt:
+    post:
+      consumes:
+      - application/json
+      description: 查询截止时间早于指定时间的 Todo 项
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.SearchTodoListsByDeadlineLTParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 按截止时间查询待办事项
+      tags:
+      - 待办事项
+  /todo_list/search_by_title:
+    post:
+      consumes:
+      - application/json
+      description: 根据标题关键字模糊查询 Todo
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.SearchTodoListsByTitleParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 按标题搜索待办事项
+      tags:
+      - 待办事项
+  /todo_list/search_by_title_and_content:
+    post:
+      consumes:
+      - application/json
+      description: 同时根据标题和内容进行模糊搜索
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.SearchTodoListsByTitleAndContentParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 按标题和内容搜索待办事项
+      tags:
+      - 待办事项
+  /todo_list/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: 根据 ID 更新 Todo 信息
+      parameters:
+      - description: 待办事项ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.UpdateTodoListByIDParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 更新待办事项
+      tags:
+      - 待办事项
+  /user/count:
+    get:
+      description: 获取系统中所有用户的数量
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 统计用户数量
+      tags:
+      - 用户管理
+  /user/create:
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的用户
+      parameters:
+      - description: 用户创建参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.CreateUserParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 创建用户
+      tags:
+      - 用户管理
+  /user/delete/{id}:
+    delete:
+      description: 根据用户ID删除用户
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 删除用户
+      tags:
+      - 用户管理
+  /user/get/{id}:
+    get:
+      description: 根据用户ID获取用户信息
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取用户详情
+      tags:
+      - 用户管理
+  /user/list:
+    get:
+      consumes:
+      - application/json
+      description: 支持分页、排序的用户列表查询
+      parameters:
+      - description: 用户列表参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.ListUsersParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取用户列表
+      tags:
+      - 用户管理
+  /user/search_by_email:
+    post:
+      consumes:
+      - application/json
+      description: 根据邮箱地址模糊搜索用户
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.SearchUsersByEmailParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 通过邮箱搜索用户
+      tags:
+      - 用户管理
+  /user/search_by_user_name:
+    post:
+      consumes:
+      - application/json
+      description: 根据用户名模糊搜索用户
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.SearchUsersByUserNameParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 通过用户名搜索用户
+      tags:
+      - 用户管理
+  /user/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: 根据用户ID更新用户信息
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 用户更新参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.UpdateUserByIDParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 更新用户信息
+      tags:
+      - 用户管理
+  /workflow/cancel/{id}:
+    post:
+      description: 取消正在运行或暂停的工作流实例
+      parameters:
+      - description: 工作流实例ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 取消工作流
+      tags:
+      - 工作流执行
+  /workflow/count:
+    get:
+      description: 统计系统中所有工作流定义数量
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取工作流定义总数
+      tags:
+      - 工作流管理
+  /workflow/create:
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的工作流定义，支持 DAG/SEQUENTIAL/PARALLEL/CONDITIONAL 类型
+      parameters:
+      - description: 工作流创建参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_modules_task_orchestration.CreateWorkflowRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 创建工作流
+      tags:
+      - 工作流管理
+  /workflow/delete/{id}:
+    delete:
+      description: 根据 ID 删除工作流定义
+      parameters:
+      - description: 工作流ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 删除工作流
+      tags:
+      - 工作流管理
+  /workflow/get/{id}:
+    get:
+      description: 根据 ID 获取工作流定义详细信息
+      parameters:
+      - description: 工作流ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "404":
+          description: 工作流不存在
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取工作流详情
+      tags:
+      - 工作流管理
+  /workflow/get/{id}/edges:
+    get:
+      description: 根据工作流 ID 获取所有边定义
+      parameters:
+      - description: 工作流ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取工作流边列表
+      tags:
+      - 工作流管理
+  /workflow/get/{id}/nodes:
+    get:
+      description: 根据工作流 ID 获取所有节点定义
+      parameters:
+      - description: 工作流ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取工作流节点列表
+      tags:
+      - 工作流管理
+  /workflow/list:
+    get:
+      consumes:
+      - application/json
+      description: 分页查询工作流定义列表
+      parameters:
+      - default: 20
+        description: 每页数量 (默认20, 最大100)
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: 偏移量
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取工作流列表
+      tags:
+      - 工作流管理
+  /workflow/pause/{id}:
+    post:
+      description: 暂停正在运行的工作流实例
+      parameters:
+      - description: 工作流实例ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 暂停工作流
+      tags:
+      - 工作流执行
+  /workflow/resume/{id}:
+    post:
+      description: 恢复已暂停的工作流实例
+      parameters:
+      - description: 工作流实例ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 恢复工作流
+      tags:
+      - 工作流执行
+  /workflow/rollback/{id}:
+    post:
+      description: 对已完成的工作流执行回滚操作，逆序执行所有可回滚节点的回滚脚本
+      parameters:
+      - description: 工作流实例ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 回滚工作流
+      tags:
+      - 工作流执行
+  /workflow/start/{id}:
+    post:
+      consumes:
+      - application/json
+      description: 根据工作流定义 ID 启动一个新的工作流实例
+      parameters:
+      - description: 工作流定义ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 启动参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_modules_task_orchestration.StartWorkflowRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "404":
+          description: 工作流不存在
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 启动工作流
+      tags:
+      - 工作流执行
+  /workflow/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: 根据 ID 更新工作流定义信息
+      parameters:
+      - description: 工作流ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_modules_task_orchestration.CreateWorkflowRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 更新工作流
+      tags:
+      - 工作流管理
+  /workflow_instance/count:
+    get:
+      description: 统计系统中所有工作流实例数量
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取工作流实例总数
+      tags:
+      - 工作流实例
+  /workflow_instance/get/{id}:
+    get:
+      description: 根据 ID 获取工作流实例详细信息
+      parameters:
+      - description: 工作流实例ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "404":
+          description: 实例不存在
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取工作流实例详情
+      tags:
+      - 工作流实例
+  /workflow_instance/get/{id}/logs:
+    get:
+      description: 根据工作流实例 ID 获取完整的执行日志
+      parameters:
+      - description: 工作流实例ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取工作流执行日志
+      tags:
+      - 工作流实例
+  /workflow_instance/list:
+    get:
+      consumes:
+      - application/json
+      description: 分页查询工作流实例列表
+      parameters:
+      - default: 20
+        description: 每页数量 (默认20, 最大100)
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: 偏移量
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取工作流实例列表
+      tags:
+      - 工作流实例
+swagger: "2.0"

@@ -1,0 +1,26 @@
+app:
+  name: assistant
+  port: 1234
+
+log:
+  level: debug
+  filename: ./logs/assistant.log
+  max_size_mb: 16
+  max_backups: 7
+  max_age_days: 14
+  compress: true
+  josn_format: false
+  console: true
+
+db:
+  host: 127.0.0.1
+  port: 3306
+  user: assistant
+  password: AAaa00__
+  db_name: assistant
+  parse_time: true
+  loc: Local
+  max_open_conns: 20
+  max_idle_conns: 10
+  conn_max_life_time: 1h
+  conn_max_idle_time: 30m

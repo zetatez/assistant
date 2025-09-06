@@ -1,0 +1,27 @@
+services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_SSL_DISABLED: 1
+      MYSQL_DATABASE: assistant
+      MYSQL_ROOT_PASSWORD: AAaa00__
+      MYSQL_USER: assistant
+      MYSQL_PASSWORD: AAaa00__
+      TZ: Asia/Shanghai
+    volumes:
+      - /home/shiyi/share/docker/mysql:/var/lib/mysql
+    ports:
+      - 3306:3306
+    privileged: true
+
+  # api:
+  #   build: .
+  #   depends_on:
+  #     db
+  #   volumes:
+  #     - ./config.yaml:/app/config.yaml
+  #   ports:
+  #     - 8080:8080
+  #   restart: unless-stopped
