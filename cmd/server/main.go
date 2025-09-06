@@ -1,55 +1,57 @@
+// @title Assistant API
+// @version 1.0
+// @description 示例项目 API 文档
+// @termsOfService http://example.com/terms/
+
+// @contact.name API Support
+// @contact.url http://www.example.com/support
+// @contact.email support@example.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /api/v1
 package main
 
 import (
-	"context"
 	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
-	"github.com/zetatez/assistant/internal/config"
-	"github.com/zetatez/assistant/internal/db"
-	"github.com/zetatez/assistant/internal/http"
+	"assistant/internal/config"
+	"assistant/internal/db"
+	"assistant/internal/module"
+	"assistant/internal/modules/health"
+	"assistant/internal/modules/user"
+
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func main() {
 	cfg := config.Load()
 
-	// init DB
-	gormDB, err := db.New(cfg)
-	if err != nil {
-		log.Fatalf("failed to connect database: %v", err)
-	}
-	defer func() { sqlDB, _ := gormDB.DB(); _ = sqlDB.Close() }()
+	db.Init(cfg.DSN())
 
-	r := httpserver.NewRouter(cfg, gormDB)
+	r := gin.Default()
 
-	srv := &http.Server{
-		Addr:         cfg.App.Addr,
-		Handler:      r,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+	modules := []module.Module{
+		health.NewHealthModule(),
+		user.NewUserModule(),
 	}
 
-	go func() {
-		log.Printf("%s running on %s...", cfg.App.Name, cfg.App.Addr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %v", err)
+	for _, m := range modules {
+		log.Printf("migrating module: %s", m.Name())
+		if err := m.Migrate(); err != nil {
+			log.Fatalf("migration failed for %s: %v", m.Name(), err)
 		}
-	}()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("shutting down server...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("server forced to shutdown: %v", err)
+		log.Printf("registering module: %s", m.Name())
+		m.Register(r)
 	}
-	log.Println("server exiting")
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	log.Println("Server running at :8080")
+	r.Run(":8080")
 }

@@ -1,5 +1,5 @@
 app:
-  name: gin-mysql-starter
+  name: assistant
   env: dev
   addr: :8080
 
