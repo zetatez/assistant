@@ -1,0 +1,21 @@
+package health
+
+import (
+	"assistant/internal/app/repo"
+	"assistant/internal/db"
+)
+
+type HealthService struct {
+	q *repo.Queries
+}
+
+func NewHealthService() *HealthService {
+	return &HealthService{
+		q: repo.New(db.GetDB()),
+	}
+}
+
+func (s *HealthService) Health() (string, error) {
+	// TODO: <23:09:23 2025-10-23: Dionysus>:
+	return "ok", nil
+}
