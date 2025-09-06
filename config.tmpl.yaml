@@ -1,0 +1,57 @@
+app:
+  name: assistant
+  port: 9876
+  root:
+    username: admin
+    password: AAaa00__
+    email: zetatez@icloud.com
+  jwt:
+    secret: your-256-bit-secret-key-here
+    expiry_hours: 24
+
+llm:
+  provider: minimax
+  api_key: "${MINIMAX_API_KEY}"
+  base_url: https://api.minimaxi.com
+  model: MiniMax-M2.5
+  timeout: 60
+  max_tokens: 4096
+  temperature: 0.2
+
+channels:
+  feishu:
+    app_id: ""
+    app_secret: ""
+
+tars:
+  enabled: true
+  persona:
+    humor_level: 50
+    honesty_level: 80
+  memory:
+    max_history: 30
+    memory_ttl_minutes: 60
+  llm_temperature: 0.7
+  channel_provider: feishu
+
+db:
+  driver_name: mysql
+  dsn: assistant:AAaa00__@tcp(127.0.0.1:3306)/assistant?charset=utf8mb4&parseTime=True&loc=Local
+  max_open_conns: 20
+  max_idle_conns: 10
+  conn_max_life_time: 1h
+  conn_max_idle_time: 30m
+
+dislock:
+  default_ttl: 30
+  max_ttl: 300
+
+log:
+  level: debug
+  filename: ./logs/assistant.log
+  max_size_mb: 16
+  max_backups: 7
+  max_age_days: 14
+  compress: true
+  json_format: true
+  console: false

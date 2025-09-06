@@ -1,0 +1,828 @@
+basePath: /
+definitions:
+  assistant_internal_app_repo.CreateSysUserParams:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      user_name:
+        type: string
+    type: object
+  assistant_internal_app_repo.SearchSysServersByIDCAndSvrIPParams:
+    properties:
+      idc:
+        type: string
+      limit:
+        type: integer
+      offset:
+        type: integer
+      svr_ip:
+        type: string
+    type: object
+  assistant_internal_app_repo.SearchSysServersByIDCParams:
+    properties:
+      idc:
+        type: string
+      limit:
+        type: integer
+      offset:
+        type: integer
+    type: object
+  assistant_internal_app_repo.SearchSysServersBySvrIPParams:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      svr_ip:
+        type: string
+    type: object
+  assistant_internal_app_repo.SearchSysUsersByEmailParams:
+    properties:
+      email:
+        type: string
+      limit:
+        type: integer
+      offset:
+        type: integer
+    type: object
+  assistant_internal_app_repo.SearchSysUsersByUserNameParams:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      user_name:
+        type: string
+    type: object
+  assistant_internal_app_repo.UpdateSysUserByIDParams:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      password:
+        type: string
+      user_name:
+        type: string
+    type: object
+  assistant_pkg_response.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+    type: object
+  internal_app_modules_sys_distributed_lock.acquireReq:
+    properties:
+      lock_holder:
+        type: string
+      lock_key:
+        type: string
+      ttl:
+        type: integer
+    type: object
+  internal_app_modules_sys_distributed_lock.releaseReq:
+    properties:
+      lock_holder:
+        type: string
+      lock_key:
+        type: string
+    type: object
+  internal_app_modules_sys_distributed_lock.renewReq:
+    properties:
+      lock_holder:
+        type: string
+      lock_key:
+        type: string
+      ttl:
+        type: integer
+    type: object
+  internal_app_modules_wiki.createEntryRequest:
+    properties:
+      content:
+        type: string
+      keywords:
+        type: string
+      title:
+        type: string
+    required:
+    - content
+    - title
+    type: object
+host: 127.0.0.1:9876
+info:
+  contact: {}
+  description: Example Swagger setup for Golang Gin.
+  title: Assistant API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: 检查服务健康状态，包括数据库和分布式锁
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务不健康
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 健康检查
+      tags:
+      - 健康检查
+  /sys_distributed_lock/acquire:
+    post:
+      consumes:
+      - application/json
+      description: 原子操作：如果锁不存在或已过期则获取成功
+      parameters:
+      - description: 锁参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_modules_sys_distributed_lock.acquireReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 尝试获取分布式锁
+      tags:
+      - 分布式锁
+  /sys_distributed_lock/check/{lock_key}:
+    get:
+      description: 返回锁是否被持有（未过期）以及holder
+      parameters:
+      - description: 锁Key
+        in: path
+        name: lock_key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 检查锁是否被持有
+      tags:
+      - 分布式锁
+  /sys_distributed_lock/query/{lock_key}:
+    get:
+      description: 获取锁的详细信息（包含holder、TTL等）
+      parameters:
+      - description: 锁Key
+        in: path
+        name: lock_key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 查询锁信息
+      tags:
+      - 分布式锁
+  /sys_distributed_lock/release:
+    post:
+      consumes:
+      - application/json
+      description: 释放锁，必须提供 lock_holder 验证所有权
+      parameters:
+      - description: 释放参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_modules_sys_distributed_lock.releaseReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "403":
+          description: 无权限（holder不匹配）
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 释放分布式锁
+      tags:
+      - 分布式锁
+  /sys_distributed_lock/renew:
+    post:
+      consumes:
+      - application/json
+      description: 为锁延长TTL，必须验证 lock_holder 是否匹配
+      parameters:
+      - description: 续期参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_modules_sys_distributed_lock.renewReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "403":
+          description: 无权限（holder不匹配或锁已过期）
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 续期分布式锁
+      tags:
+      - 分布式锁
+  /sys_server/count:
+    get:
+      description: 获取系统中所有服务器记录数量
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 统计服务器数量
+      tags:
+      - 服务器管理
+  /sys_server/get/{id}:
+    get:
+      description: 根据服务器ID获取服务器信息
+      parameters:
+      - description: 服务器ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取服务器详情
+      tags:
+      - 服务器管理
+  /sys_server/list:
+    get:
+      consumes:
+      - application/json
+      description: 支持分页、排序的服务器列表查询
+      parameters:
+      - in: query
+        name: limit
+        type: integer
+      - in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取服务器列表
+      tags:
+      - 服务器管理
+  /sys_server/search_by_idc:
+    post:
+      consumes:
+      - application/json
+      description: 根据IDC精确查询服务器
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.SearchSysServersByIDCParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 通过IDC搜索服务器
+      tags:
+      - 服务器管理
+  /sys_server/search_by_idc_and_svr_ip:
+    post:
+      consumes:
+      - application/json
+      description: IDC和IP组合模糊查询服务器
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.SearchSysServersByIDCAndSvrIPParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 通过IDC和IP搜索服务器
+      tags:
+      - 服务器管理
+  /sys_server/search_by_svr_ip:
+    post:
+      consumes:
+      - application/json
+      description: 根据IP模糊查询服务器
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.SearchSysServersBySvrIPParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 通过IP搜索服务器
+      tags:
+      - 服务器管理
+  /sys_user/count:
+    get:
+      description: 获取系统中所有用户的数量
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 统计用户数量
+      tags:
+      - 用户管理
+  /sys_user/create:
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的用户
+      parameters:
+      - description: 用户创建参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.CreateSysUserParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 创建用户
+      tags:
+      - 用户管理
+  /sys_user/delete/{id}:
+    delete:
+      description: 根据用户ID删除用户
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 删除用户
+      tags:
+      - 用户管理
+  /sys_user/get/{id}:
+    get:
+      description: 根据用户ID获取用户信息
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取用户详情
+      tags:
+      - 用户管理
+  /sys_user/search_by_email:
+    post:
+      consumes:
+      - application/json
+      description: 根据邮箱地址模糊搜索用户
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.SearchSysUsersByEmailParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 通过邮箱搜索用户
+      tags:
+      - 用户管理
+  /sys_user/search_by_user_name:
+    post:
+      consumes:
+      - application/json
+      description: 根据用户名模糊搜索用户
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.SearchSysUsersByUserNameParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 通过用户名搜索用户
+      tags:
+      - 用户管理
+  /sys_user/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: 根据用户ID更新用户信息
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 用户更新参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.UpdateSysUserByIDParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 更新用户信息
+      tags:
+      - 用户管理
+  /wiki/entries:
+    get:
+      description: 分页获取知识库条目列表
+      parameters:
+      - default: 0
+        description: 偏移量
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: 返回数量
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取知识库条目列表
+      tags:
+      - 知识库
+    post:
+      consumes:
+      - application/json
+      description: 创建新的知识库条目
+      parameters:
+      - description: 条目信息
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_modules_wiki.createEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 创建知识库条目
+      tags:
+      - 知识库
+  /wiki/entries/{id}:
+    delete:
+      description: 根据ID删除知识库条目
+      parameters:
+      - description: 条目ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 删除知识库条目
+      tags:
+      - 知识库
+    get:
+      description: 根据ID获取知识库条目详情
+      parameters:
+      - description: 条目ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "404":
+          description: 条目不存在
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取知识库条目详情
+      tags:
+      - 知识库
+  /wiki/import:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 从Markdown文件导入知识库条目
+      parameters:
+      - description: Markdown文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 导入知识库条目
+      tags:
+      - 知识库
+  /wiki/search:
+    get:
+      description: 根据关键词搜索知识库条目
+      parameters:
+      - description: 搜索关键词
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 5
+        description: 返回数量
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 搜索知识库条目
+      tags:
+      - 知识库
+schemes:
+- http
+swagger: "2.0"
