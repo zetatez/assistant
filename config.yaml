@@ -1,0 +1,12 @@
+app:
+  name: gin-mysql-starter
+  env: dev
+  addr: :8080
+
+database:
+  host: 127.0.0.1
+  port: 3306
+  user: assistant
+  pass: AAaa00__
+  name: assistant
+  params: "charset=utf8mb4&parseTime=True&loc=Local"
