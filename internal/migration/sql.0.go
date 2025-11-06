@@ -61,59 +61,84 @@ var tables = []Migration{
 	{
 		CommitID: "basic",
 		UpSQL: `
-		CREATE TABLE IF NOT EXISTS task_tmpl (
-			id BIGINT AUTO_INCREMENT,
-			gmt_create TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			gmt_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-			name VARCHAR(255) NOT NULL,
-			description TEXT,
-			config JSON NOT NULL,
-			is_enable BOOLEAN DEFAULT TRUE,
+		CREATE TABLE IF NOT EXISTS task_def (
+			id BIGINT AUTO_INCREMENT NOT NULL,
+			gmt_create TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			gmt_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			name VARCHAR(255) NOT NULL COMMENT '任务名称',
+			description TEXT COMMENT '任务描述',
+			task_type ENUM('ATOMIC', 'COMPOSITE') NOT NULL DEFAULT 'ATOMIC' COMMENT '任务类型',
+			config JSON DEFAULT NULL COMMENT '任务配置, 例如脚本, HTTP请求等',
+			retry_policy JSON DEFAULT NULL COMMENT '重试策略配置',
 			PRIMARY KEY (id),
-			UNIQUE KEY (name)
-		) COMMENT='任务模板表, 由多个原子任务编排而成';
+			UNIQUE KEY uk_ (name),
+			KEY idx_n_tt (name, task_type)
+		) COMMENT='任务定义表: 可复用模板';
 		`,
 		DownSQL: `
-		DROP TABLE IF EXISTS task_tmpl;
+		DROP TABLE IF EXISTS task_def;
 		`,
 	},
 	{
 		CommitID: "basic",
 		UpSQL: `
-		CREATE TABLE IF NOT EXISTS task_atomic (
-			id BIGINT AUTO_INCREMENT,
-			gmt_create TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			gmt_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-			name VARCHAR(255) NOT NULL,
-			description TEXT,
-			task_type VARCHAR(48) NOT NULL,
-			config JSON NOT NULL,
-			is_enable BOOLEAN DEFAULT TRUE,
+		CREATE TABLE IF NOT EXISTS task_def_relation (
+			id BIGINT AUTO_INCREMENT NOT NULL,
+			gmt_create TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			gmt_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			parent_id BIGINT NOT NULL,
+			child_id BIGINT NOT NULL,
+			ord INT DEFAULT 0,
 			PRIMARY KEY (id),
-			UNIQUE KEY (name)
-		) COMMENT='任务原子表'
+			UNIQUE KEY uniq_pi_o (parent_id, ord)
+		) COMMENT='任务定义层级关系表';
 		`,
 		DownSQL: `
-		DROP TABLE IF EXISTS task_atomic;
+		DROP TABLE IF EXISTS task_def_relation;
 		`,
 	},
 	{
 		CommitID: "basic",
 		UpSQL: `
-		CREATE TABLE IF NOT EXISTS task_composite (
-			id BIGINT AUTO_INCREMENT,
-			gmt_create TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			gmt_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-			task_tmpl_id BIGINT UNSIGNED NOT NULL,
-			task_atomic_id BIGINT UNSIGNED NOT NULL,
-			step_order INT NOT NULL,
-			depends_on JSON NOT NULL,
+		CREATE TABLE IF NOT EXISTS task_instance (
+			id BIGINT AUTO_INCREMENT NOT NULL,
+			gmt_create TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			gmt_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			task_def_id BIGINT NOT NULL COMMENT '关联的任务定义ID',
+			parent_instance_id BIGINT DEFAULT NULL COMMENT '父实例ID',
+			ord INT DEFAULT 0 COMMENT '同级实例顺序',
+			status ENUM('PENDING','RUNNING','SUCCESS','FAILED','CANCELLED') DEFAULT 'PENDING' COMMENT '执行状态',
+			result JSON DEFAULT NULL COMMENT '执行结果',
+			err_msg TEXT DEFAULT NULL COMMENT '错误信息',
+			FOREIGN KEY (task_def_id) REFERENCES task_def(id),
+			FOREIGN KEY (parent_instance_id) REFERENCES task_instance(id) ON DELETE CASCADE,
 			PRIMARY KEY (id),
-			UNIQUE KEY (task_tmpl_id, step_order)
-		) COMMENT='任务模板与原子任务映射关系';
+			INDEX idx_pii_s (parent_instance_id, ord)
+		) COMMENT='任务实例表';
 		`,
 		DownSQL: `
-		DROP TABLE IF EXISTS task_composite;
+		DROP TABLE IF EXISTS task_instance;
+		`,
+	},
+	{
+		CommitID: "basic",
+		UpSQL: `
+   CREATE TABLE IF NOT EXISTS task_exec (
+     id BIGINT AUTO_INCREMENT NOT NULL,
+     gmt_create TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     gmt_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+     task_instance_id BIGINT NOT NULL COMMENT '任务实例ID',
+     gmt_start TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     gmt_end TIMESTAMP DEFAULT NULL,
+     status ENUM('RUNNING','SUCCESS','FAILED') DEFAULT 'RUNNING',
+     log TEXT COMMENT '执行日志',
+     FOREIGN KEY (task_instance_id) REFERENCES task_instance(id) ON DELETE CASCADE,
+     PRIMARY KEY (id),
+     KEY idx_ti_s (task_instance_id, status)
+   ) COMMENT='任务执行记录';
+		`,
+		DownSQL: `
+		DROP TABLE IF EXISTS task_exec;
 		`,
 	},
 }

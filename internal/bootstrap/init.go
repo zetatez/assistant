@@ -1,25 +1,23 @@
 package bootstrap
 
 import (
-	"assistant/internal/config"
+	"assistant/internal/app"
+	"assistant/internal/cfg"
 	"assistant/internal/db"
-	"assistant/internal/logger"
+	"assistant/internal/log"
 	"assistant/internal/migration"
-	"log"
 )
 
 func Init() {
-	// init app config
-	config.InitConfig()
+	cfg.InitCFG()
 
-	// init log
-	logger.InitLogger(config.GetConfig().Log)
+	log.InitLog()
 
-	// init db
-	db.InitDB(logger.GetLogger(), config.GetConfig().DB)
+	db.InitDB()
 
-	// migration
-	migration.Migrate(logger.GetLogger(), db.GetDB())
+	migration.Migrate()
 
-	log.Println("✅ app is initialized !")
+	log.Logger.Info("✅ app is initialized !")
+
+	app.Run()
 }

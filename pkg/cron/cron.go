@@ -9,23 +9,6 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-type TaskFunc func() error
-
-type TaskResult struct {
-	StartTime time.Time
-	Duration  time.Duration
-	Success   bool
-	ErrorMsg  string
-}
-
-type Task struct {
-	Name       string
-	Schedule   string
-	Job        TaskFunc
-	EntryID    cron.EntryID
-	ResultHist []TaskResult
-}
-
 type CronMgr struct {
 	c            *cron.Cron
 	tasks        map[string]*Task
@@ -44,6 +27,23 @@ func NewCronMgr(logger *log.Logger) *CronMgr {
 		logger:       logger,
 		maxHistCount: 10,
 	}
+}
+
+type Task struct {
+	Name       string
+	Schedule   string
+	Job        TaskFunc
+	EntryID    cron.EntryID
+	ResultHist []TaskResult
+}
+
+type TaskFunc func() error
+
+type TaskResult struct {
+	StartTime time.Time
+	Duration  time.Duration
+	Success   bool
+	ErrorMsg  string
 }
 
 func (m *CronMgr) AddTask(name string, spec string, fn TaskFunc) error {

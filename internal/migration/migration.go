@@ -1,11 +1,10 @@
 package migration
 
 import (
+	"assistant/internal/db"
+	"assistant/internal/log"
 	"assistant/pkg/hash"
-	"database/sql"
 	"fmt"
-
-	"github.com/sirupsen/logrus"
 )
 
 type Migration struct {
@@ -14,30 +13,30 @@ type Migration struct {
 	DownSQL  string
 }
 
-func Migrate(log *logrus.Logger, db *sql.DB) {
-	err := createMigrationTable(db)
+func Migrate() {
+	err := createMigrationTable()
 	if err != nil {
-		log.Fatalf("❌ migrate failed: %v", err)
+		log.Logger.Fatalf("❌ migrate failed: %v", err)
 	}
 
 	// tables
 	for _, v := range tables {
 		v.CommitID = "table: " + hash.Sha1(v.UpSQL+v.DownSQL)
 
-		ok, err := alreadyApplied(db, v.CommitID)
+		ok, err := alreadyApplied(v.CommitID)
 		if err != nil {
-			log.Fatalf("❌ migrate failed: %v", err)
+			log.Logger.Fatalf("❌ migrate failed: %v", err)
 		}
 		if ok {
 			continue
 		}
 
-		if _, err := db.Exec(v.UpSQL); err != nil {
-			log.Fatalf("❌ migrate table failed: %v, %s", err, v.UpSQL)
+		if _, err := db.GetDB().Exec(v.UpSQL); err != nil {
+			log.Logger.Fatalf("❌ migrate table failed: %v, %s", err, v.UpSQL)
 		}
 
-		if err = recordMigration(db, v); err != nil {
-			log.Fatalf("❌ migrate failed: %v", err)
+		if err = recordMigration(v); err != nil {
+			log.Logger.Fatalf("❌ migrate failed: %v", err)
 		}
 	}
 
@@ -45,31 +44,30 @@ func Migrate(log *logrus.Logger, db *sql.DB) {
 	for _, v := range changes {
 		v.CommitID = hash.Sha256(v.UpSQL + v.DownSQL)
 
-		ok, err := alreadyApplied(db, v.CommitID)
+		ok, err := alreadyApplied(v.CommitID)
 		if err != nil {
-			log.Fatalf("❌ migrate failed: %v", err)
+			log.Logger.Fatalf("❌ migrate failed: %v", err)
 		}
 		if ok {
 			continue
 		}
 
-		if _, err := db.Exec(v.UpSQL); err != nil {
-			log.Fatalf("❌ migrate changes failed: %v, %s", err, v.UpSQL)
+		if _, err := db.GetDB().Exec(v.UpSQL); err != nil {
+			log.Logger.Fatalf("❌ migrate changes failed: %v, %s", err, v.UpSQL)
 		}
 
-		if err = recordMigration(db, v); err != nil {
-			log.Fatalf("❌ migrate failed: %v", err)
+		if err = recordMigration(v); err != nil {
+			log.Logger.Fatalf("❌ migrate failed: %v", err)
 		}
 	}
 
-	// init admin
-	err = initAdmin(db)
+	err = initAdmin()
 	if err != nil {
-		log.Fatalf("❌ migrate failed: init admin failed, %v", err)
+		log.Logger.Fatalf("❌ migrate failed: init admin failed, %v", err)
 	}
 }
 
-func createMigrationTable(db *sql.DB) error {
+func createMigrationTable() error {
 	query := `
 	CREATE TABLE IF NOT EXISTS migration (
 		id bigint NOT NULL AUTO_INCREMENT,
@@ -82,39 +80,43 @@ func createMigrationTable(db *sql.DB) error {
 		UNIQUE KEY uk_ci (commit_id)
 	) COMMENT='数据库变更记录';
 	`
-	if _, err := db.Exec(query); err != nil {
+	if _, err := db.GetDB().Exec(query); err != nil {
 		return err
 	}
 	return nil
 }
 
-func alreadyApplied(db *sql.DB, commit_id string) (bool, error) {
+func alreadyApplied(commit_id string) (bool, error) {
 	var count int
 	query := "SELECT COUNT(1) FROM migration WHERE commit_id = ?"
-	err := db.QueryRow(query, commit_id).Scan(&count)
+	err := db.GetDB().QueryRow(query, commit_id).Scan(&count)
 	if err != nil {
 		return false, err
 	}
 	return count > 0, nil
 }
 
-func recordMigration(db *sql.DB, v Migration) error {
+func recordMigration(v Migration) error {
 	query := "INSERT INTO migration (commit_id, up_sql, down_sql) VALUES (?, ?, ?)"
-	_, err := db.Exec(query, v.CommitID, v.UpSQL, v.DownSQL)
+	_, err := db.GetDB().Exec(query, v.CommitID, v.UpSQL, v.DownSQL)
 	if err != nil {
 		return fmt.Errorf("failed to record migration")
 	}
 	return nil
 }
 
-func initAdmin(db *sql.DB) error {
+func initAdmin() error {
 	password, _ := hash.HashPassword("AAaa00__")
 	user := struct {
 		UserName string
 		Password string
 		Email    string
-	}{UserName: "admin", Password: password, Email: ""}
-	_, err := db.Exec(
+	}{
+		UserName: "admin",
+		Password: password,
+		Email:    "",
+	}
+	_, err := db.GetDB().Exec(
 		"insert ignore into user (user_name, password, email) values(?, ?, ?)",
 		user.UserName,
 		user.Password,

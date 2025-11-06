@@ -52,15 +52,22 @@ func (q *Queries) DeleteServer(ctx context.Context, id int64) (sql.Result, error
 	return q.db.ExecContext(ctx, deleteServer, id)
 }
 
-const getServer = `-- name: GetServer :one
-SELECT id, gmt_create, gmt_modified, idc, svr_ip, ak, sk, svr_status
+const getServerByID = `-- name: GetServerByID :one
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       idc,
+       svr_ip,
+       ak,
+       sk,
+       svr_status
 FROM server
 WHERE id = ?
 LIMIT 1
 `
 
-func (q *Queries) GetServer(ctx context.Context, id int64) (Server, error) {
-	row := q.db.QueryRowContext(ctx, getServer, id)
+func (q *Queries) GetServerByID(ctx context.Context, id int64) (Server, error) {
+	row := q.db.QueryRowContext(ctx, getServerByID, id)
 	var i Server
 	err := row.Scan(
 		&i.ID,
@@ -76,7 +83,14 @@ func (q *Queries) GetServer(ctx context.Context, id int64) (Server, error) {
 }
 
 const listServers = `-- name: ListServers :many
-SELECT id, gmt_create, gmt_modified, idc, svr_ip, ak, sk, svr_status
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       idc,
+       svr_ip,
+       ak,
+       sk,
+       svr_status
 FROM server
 ORDER BY id DESC
 LIMIT ? OFFSET ?
@@ -120,7 +134,14 @@ func (q *Queries) ListServers(ctx context.Context, arg ListServersParams) ([]Ser
 }
 
 const searchServersByIDC = `-- name: SearchServersByIDC :many
-SELECT id, gmt_create, gmt_modified, idc, svr_ip, ak, sk, svr_status
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       idc,
+       svr_ip,
+       ak,
+       sk,
+       svr_status
 FROM server
 WHERE idc = ?
 ORDER BY id DESC
@@ -166,9 +187,16 @@ func (q *Queries) SearchServersByIDC(ctx context.Context, arg SearchServersByIDC
 }
 
 const searchServersByIDCAndSvrIP = `-- name: SearchServersByIDCAndSvrIP :many
-SELECT id, gmt_create, gmt_modified, idc, svr_ip, ak, sk, svr_status
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       idc,
+       svr_ip,
+       ak,
+       sk,
+       svr_status
 FROM server
-WHERE idc = ?
+WHERE idc like ?
   AND svr_ip like ?
 ORDER BY id DESC
 LIMIT ? OFFSET ?
@@ -219,7 +247,14 @@ func (q *Queries) SearchServersByIDCAndSvrIP(ctx context.Context, arg SearchServ
 }
 
 const searchServersBySvrIP = `-- name: SearchServersBySvrIP :many
-SELECT id, gmt_create, gmt_modified, idc, svr_ip, ak, sk, svr_status
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       idc,
+       svr_ip,
+       ak,
+       sk,
+       svr_status
 FROM server
 WHERE svr_ip like ?
 ORDER BY id DESC

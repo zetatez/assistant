@@ -36,25 +36,31 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Res
 	return q.db.ExecContext(ctx, createUser, arg.UserName, arg.Password, arg.Email)
 }
 
-const deleteUser = `-- name: DeleteUser :exec
+const deleteUserByID = `-- name: DeleteUserByID :exec
 DELETE FROM user
 WHERE id = ?
 LIMIT 1
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteUser, id)
+func (q *Queries) DeleteUserByID(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteUserByID, id)
 	return err
 }
 
-const getUser = `-- name: GetUser :one
-SELECT id, gmt_create, gmt_modified, user_name, password, email
+const getUserByID = `-- name: GetUserByID :one
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       user_name,
+       password,
+       email
 FROM user
-WHERE id = ? LIMIT 1
+WHERE id = ?
+LIMIT 1
 `
 
-func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUser, id)
+func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByID, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -68,7 +74,12 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, gmt_create, gmt_modified, user_name, password, email
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       user_name,
+       password,
+       email
 FROM user
 ORDER BY id DESC
 LIMIT ? OFFSET ?
@@ -110,7 +121,12 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 }
 
 const searchUsersByEmail = `-- name: SearchUsersByEmail :many
-SELECT id, gmt_create, gmt_modified, user_name, password, email
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       user_name,
+       password,
+       email
 FROM user
 WHERE email like ?
 ORDER BY id DESC
@@ -154,7 +170,12 @@ func (q *Queries) SearchUsersByEmail(ctx context.Context, arg SearchUsersByEmail
 }
 
 const searchUsersByUserName = `-- name: SearchUsersByUserName :many
-SELECT id, gmt_create, gmt_modified, user_name, password, email
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       user_name,
+       password,
+       email
 FROM user
 WHERE user_name like ?
 ORDER BY id DESC
@@ -197,21 +218,24 @@ func (q *Queries) SearchUsersByUserName(ctx context.Context, arg SearchUsersByUs
 	return items, nil
 }
 
-const updateUser = `-- name: UpdateUser :exec
-UPDATE user SET user_name = ?, password = ?, email = ?
+const updateUserByID = `-- name: UpdateUserByID :exec
+UPDATE user
+SET user_name = ?,
+     password = ?,
+        email = ?
 WHERE id = ?
 LIMIT 1
 `
 
-type UpdateUserParams struct {
+type UpdateUserByIDParams struct {
 	UserName string `json:"user_name"`
 	Password string `json:"password"`
 	Email    string `json:"email"`
 	ID       int64  `json:"id"`
 }
 
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.ExecContext(ctx, updateUser,
+func (q *Queries) UpdateUserByID(ctx context.Context, arg UpdateUserByIDParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserByID,
 		arg.UserName,
 		arg.Password,
 		arg.Email,

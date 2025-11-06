@@ -5,9 +5,142 @@
 package repo
 
 import (
+	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 )
+
+type TaskDefTaskType string
+
+const (
+	TaskDefTaskTypeATOMIC    TaskDefTaskType = "ATOMIC"
+	TaskDefTaskTypeCOMPOSITE TaskDefTaskType = "COMPOSITE"
+)
+
+func (e *TaskDefTaskType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TaskDefTaskType(s)
+	case string:
+		*e = TaskDefTaskType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TaskDefTaskType: %T", src)
+	}
+	return nil
+}
+
+type NullTaskDefTaskType struct {
+	TaskDefTaskType TaskDefTaskType `json:"task_def_task_type"`
+	Valid           bool            `json:"valid"` // Valid is true if TaskDefTaskType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTaskDefTaskType) Scan(value interface{}) error {
+	if value == nil {
+		ns.TaskDefTaskType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TaskDefTaskType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTaskDefTaskType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TaskDefTaskType), nil
+}
+
+type TaskExecStatus string
+
+const (
+	TaskExecStatusRUNNING TaskExecStatus = "RUNNING"
+	TaskExecStatusSUCCESS TaskExecStatus = "SUCCESS"
+	TaskExecStatusFAILED  TaskExecStatus = "FAILED"
+)
+
+func (e *TaskExecStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TaskExecStatus(s)
+	case string:
+		*e = TaskExecStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TaskExecStatus: %T", src)
+	}
+	return nil
+}
+
+type NullTaskExecStatus struct {
+	TaskExecStatus TaskExecStatus `json:"task_exec_status"`
+	Valid          bool           `json:"valid"` // Valid is true if TaskExecStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTaskExecStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.TaskExecStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TaskExecStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTaskExecStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TaskExecStatus), nil
+}
+
+type TaskInstanceStatus string
+
+const (
+	TaskInstanceStatusPENDING   TaskInstanceStatus = "PENDING"
+	TaskInstanceStatusRUNNING   TaskInstanceStatus = "RUNNING"
+	TaskInstanceStatusSUCCESS   TaskInstanceStatus = "SUCCESS"
+	TaskInstanceStatusFAILED    TaskInstanceStatus = "FAILED"
+	TaskInstanceStatusCANCELLED TaskInstanceStatus = "CANCELLED"
+)
+
+func (e *TaskInstanceStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TaskInstanceStatus(s)
+	case string:
+		*e = TaskInstanceStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TaskInstanceStatus: %T", src)
+	}
+	return nil
+}
+
+type NullTaskInstanceStatus struct {
+	TaskInstanceStatus TaskInstanceStatus `json:"task_instance_status"`
+	Valid              bool               `json:"valid"` // Valid is true if TaskInstanceStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTaskInstanceStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.TaskInstanceStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TaskInstanceStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTaskInstanceStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TaskInstanceStatus), nil
+}
 
 // 服务器表
 type Server struct {
@@ -21,38 +154,51 @@ type Server struct {
 	SvrStatus   string    `json:"svr_status"`
 }
 
-// 任务原子表
-type TaskAtomic struct {
+// 任务定义表, 可复用模板
+type TaskDef struct {
 	ID          int64           `json:"id"`
 	GmtCreate   time.Time       `json:"gmt_create"`
 	GmtModified time.Time       `json:"gmt_modified"`
 	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	TaskType    string          `json:"task_type"`
+	Description sql.NullString  `json:"description"`
+	TaskType    TaskDefTaskType `json:"task_type"`
 	Config      json.RawMessage `json:"config"`
-	IsEnable    bool            `json:"is_enable"`
+	RetryPolicy json.RawMessage `json:"retry_policy"`
 }
 
-// 任务模板与原子任务映射关系
-type TaskComposite struct {
-	ID           int64           `json:"id"`
-	GmtCreate    time.Time       `json:"gmt_create"`
-	GmtModified  time.Time       `json:"gmt_modified"`
-	TaskTmplID   uint64          `json:"task_tmpl_id"`
-	TaskAtomicID uint64          `json:"task_atomic_id"`
-	StepOrder    int32           `json:"step_order"`
-	DependsOn    json.RawMessage `json:"depends_on"`
+// 任务定义层级关系表
+type TaskDefRelation struct {
+	ID          int64         `json:"id"`
+	GmtCreate   time.Time     `json:"gmt_create"`
+	GmtModified time.Time     `json:"gmt_modified"`
+	ParentID    int64         `json:"parent_id"`
+	ChildID     int64         `json:"child_id"`
+	Ord         sql.NullInt32 `json:"ord"`
 }
 
-// 任务模板表, 由多个原子任务编排而成
-type TaskTmpl struct {
-	ID          int64           `json:"id"`
-	GmtCreate   time.Time       `json:"gmt_create"`
-	GmtModified time.Time       `json:"gmt_modified"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Config      json.RawMessage `json:"config"`
-	IsEnable    bool            `json:"is_enable"`
+// 任务执行记录
+type TaskExec struct {
+	ID             int64              `json:"id"`
+	GmtCreate      time.Time          `json:"gmt_create"`
+	GmtModified    time.Time          `json:"gmt_modified"`
+	TaskInstanceID int64              `json:"task_instance_id"`
+	GmtStart       sql.NullTime       `json:"gmt_start"`
+	GmtEnd         sql.NullTime       `json:"gmt_end"`
+	Status         NullTaskExecStatus `json:"status"`
+	Log            sql.NullString     `json:"log"`
+}
+
+// 任务实例表
+type TaskInstance struct {
+	ID               int64                  `json:"id"`
+	GmtCreate        time.Time              `json:"gmt_create"`
+	GmtModified      time.Time              `json:"gmt_modified"`
+	TaskDefID        int64                  `json:"task_def_id"`
+	ParentInstanceID sql.NullInt64          `json:"parent_instance_id"`
+	Ord              sql.NullInt32          `json:"ord"`
+	Status           NullTaskInstanceStatus `json:"status"`
+	Result           json.RawMessage        `json:"result"`
+	ErrMsg           sql.NullString         `json:"err_msg"`
 }
 
 // 代办事项表

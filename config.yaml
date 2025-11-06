@@ -1,7 +1,6 @@
 app:
   name: assistant
-  env: dev
-  addr: :8080
+  port: 8080
 
 log:
   level: debug
@@ -11,7 +10,7 @@ log:
   max_age_days: 14
   compress: true
   josn_format: false
-  console: false
+  console: true
 
 db:
   host: 127.0.0.1

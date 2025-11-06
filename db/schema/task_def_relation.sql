@@ -1,0 +1,24 @@
+
+CREATE TABLE IF NOT EXISTS task_def_relation (
+  id BIGINT AUTO_INCREMENT NOT NULL,
+  gmt_create TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  gmt_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  parent_id BIGINT NOT NULL,
+  child_id BIGINT NOT NULL,
+  ord INT DEFAULT 0,
+  PRIMARY KEY (id),
+  UNIQUE KEY uniq_pi_o (parent_id, ord)
+) COMMENT='任务定义层级关系表';
+
+-- CREATE TABLE IF NOT EXISTS task_def_relation (
+--   id BIGINT AUTO_INCREMENT NOT NULL,
+--   gmt_create TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--   gmt_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--   parent_id BIGINT NOT NULL COMMENT '父任务: task_def.id',
+--   child_id BIGINT NOT NULL COMMENT '子任务: task_def.id',
+--   ord INT DEFAULT 0 COMMENT '子任务顺序号',
+--   FOREIGN KEY (parent_id) REFERENCES task_def(id) ON DELETE CASCADE,
+--   FOREIGN KEY (child_id) REFERENCES task_def(id) ON DELETE CASCADE,
+--   PRIMARY KEY (id),
+--   UNIQUE KEY uniq_pi_o (parent_id, ord)
+-- ) COMMENT='任务定义层级关系表';

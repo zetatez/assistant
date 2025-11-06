@@ -36,36 +36,31 @@ func (q *Queries) CreateTodoList(ctx context.Context, arg CreateTodoListParams) 
 	return q.db.ExecContext(ctx, createTodoList, arg.Title, arg.Content, arg.Deadline)
 }
 
-const deleteTodoList = `-- name: DeleteTodoList :execresult
+const deleteTodoListByID = `-- name: DeleteTodoListByID :execresult
 DELETE FROM todo_list
 WHERE id = ?
 LIMIT 1
 `
 
-func (q *Queries) DeleteTodoList(ctx context.Context, id int64) (sql.Result, error) {
-	return q.db.ExecContext(ctx, deleteTodoList, id)
+func (q *Queries) DeleteTodoListByID(ctx context.Context, id int64) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteTodoListByID, id)
 }
 
-const doneTodoList = `-- name: DoneTodoList :execresult
-UPDATE todo_list
-SET is_done = 1
-WHERE id = ?
-LIMIT 1
-`
-
-func (q *Queries) DoneTodoList(ctx context.Context, id int64) (sql.Result, error) {
-	return q.db.ExecContext(ctx, doneTodoList, id)
-}
-
-const getTodoList = `-- name: GetTodoList :one
-SELECT id, gmt_create, gmt_modified, title, content, deadline, is_done
+const getTodoListByID = `-- name: GetTodoListByID :one
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       title,
+       content,
+       deadline,
+       is_done
 FROM todo_list
 WHERE id = ?
 LIMIT 1
 `
 
-func (q *Queries) GetTodoList(ctx context.Context, id int64) (TodoList, error) {
-	row := q.db.QueryRowContext(ctx, getTodoList, id)
+func (q *Queries) GetTodoListByID(ctx context.Context, id int64) (TodoList, error) {
+	row := q.db.QueryRowContext(ctx, getTodoListByID, id)
 	var i TodoList
 	err := row.Scan(
 		&i.ID,
@@ -80,7 +75,13 @@ func (q *Queries) GetTodoList(ctx context.Context, id int64) (TodoList, error) {
 }
 
 const listTodoLists = `-- name: ListTodoLists :many
-SELECT id, gmt_create, gmt_modified, title, content, deadline, is_done
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       title,
+       content,
+       deadline,
+       is_done
 FROM todo_list
 ORDER BY id DESC
 LIMIT ? OFFSET ?
@@ -122,8 +123,25 @@ func (q *Queries) ListTodoLists(ctx context.Context, arg ListTodoListsParams) ([
 	return items, nil
 }
 
+const markTodoListAsDoneByID = `-- name: MarkTodoListAsDoneByID :execresult
+UPDATE todo_list
+SET is_done = 1
+WHERE id = ?
+LIMIT 1
+`
+
+func (q *Queries) MarkTodoListAsDoneByID(ctx context.Context, id int64) (sql.Result, error) {
+	return q.db.ExecContext(ctx, markTodoListAsDoneByID, id)
+}
+
 const searchTodoListsByContent = `-- name: SearchTodoListsByContent :many
-SELECT id, gmt_create, gmt_modified, title, content, deadline, is_done
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       title,
+       content,
+       deadline,
+       is_done
 FROM todo_list
 WHERE content like ?
 ORDER BY id DESC
@@ -168,7 +186,13 @@ func (q *Queries) SearchTodoListsByContent(ctx context.Context, arg SearchTodoLi
 }
 
 const searchTodoListsByDeadlineLT = `-- name: SearchTodoListsByDeadlineLT :many
-SELECT id, gmt_create, gmt_modified, title, content, deadline, is_done
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       title,
+       content,
+       deadline,
+       is_done
 FROM todo_list
 WHERE deadline < ?
 ORDER BY id DESC
@@ -213,7 +237,13 @@ func (q *Queries) SearchTodoListsByDeadlineLT(ctx context.Context, arg SearchTod
 }
 
 const searchTodoListsByTitle = `-- name: SearchTodoListsByTitle :many
-SELECT id, gmt_create, gmt_modified, title, content, deadline, is_done
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       title,
+       content,
+       deadline,
+       is_done
 FROM todo_list
 WHERE title like ?
 ORDER BY id DESC
@@ -257,8 +287,14 @@ func (q *Queries) SearchTodoListsByTitle(ctx context.Context, arg SearchTodoList
 	return items, nil
 }
 
-const searchTodoListsByTitleContent = `-- name: SearchTodoListsByTitleContent :many
-SELECT id, gmt_create, gmt_modified, title, content, deadline, is_done
+const searchTodoListsByTitleAndContent = `-- name: SearchTodoListsByTitleAndContent :many
+SELECT id,
+       gmt_create,
+       gmt_modified,
+       title,
+       content,
+       deadline,
+       is_done
 FROM todo_list
 WHERE title like ?
   AND content like ?
@@ -266,15 +302,15 @@ ORDER BY id
 LIMIT ? OFFSET ?
 `
 
-type SearchTodoListsByTitleContentParams struct {
+type SearchTodoListsByTitleAndContentParams struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`
 	Limit   int32  `json:"limit"`
 	Offset  int32  `json:"offset"`
 }
 
-func (q *Queries) SearchTodoListsByTitleContent(ctx context.Context, arg SearchTodoListsByTitleContentParams) ([]TodoList, error) {
-	rows, err := q.db.QueryContext(ctx, searchTodoListsByTitleContent,
+func (q *Queries) SearchTodoListsByTitleAndContent(ctx context.Context, arg SearchTodoListsByTitleAndContentParams) ([]TodoList, error) {
+	rows, err := q.db.QueryContext(ctx, searchTodoListsByTitleAndContent,
 		arg.Title,
 		arg.Content,
 		arg.Limit,
@@ -309,7 +345,7 @@ func (q *Queries) SearchTodoListsByTitleContent(ctx context.Context, arg SearchT
 	return items, nil
 }
 
-const updateTodoList = `-- name: UpdateTodoList :execresult
+const updateTodoListByID = `-- name: UpdateTodoListByID :execresult
 UPDATE todo_list
 SET  title = ?,
    content = ?,
@@ -318,15 +354,15 @@ WHERE id = ?
 LIMIT 1
 `
 
-type UpdateTodoListParams struct {
+type UpdateTodoListByIDParams struct {
 	Title    string `json:"title"`
 	Content  string `json:"content"`
 	Deadline string `json:"deadline"`
 	ID       int64  `json:"id"`
 }
 
-func (q *Queries) UpdateTodoList(ctx context.Context, arg UpdateTodoListParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, updateTodoList,
+func (q *Queries) UpdateTodoListByID(ctx context.Context, arg UpdateTodoListByIDParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateTodoListByID,
 		arg.Title,
 		arg.Content,
 		arg.Deadline,

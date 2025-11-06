@@ -26,12 +26,12 @@ func (s *UserService) CreateUser(ctx context.Context, arg repo.CreateUserParams)
 	return err
 }
 
-func (s *UserService) DeleteUser(ctx context.Context, id int64) error {
-	return s.q.DeleteUser(ctx, id)
+func (s *UserService) DeleteUserByID(ctx context.Context, id int64) error {
+	return s.q.DeleteUserByID(ctx, id)
 }
 
-func (s *UserService) GetUser(ctx context.Context, id int64) (repo.User, error) {
-	return s.q.GetUser(ctx, id)
+func (s *UserService) GetUserByID(ctx context.Context, id int64) (repo.User, error) {
+	return s.q.GetUserByID(ctx, id)
 }
 
 func (s *UserService) ListUsers(ctx context.Context, arg repo.ListUsersParams) ([]repo.User, error) {
@@ -46,6 +46,6 @@ func (s *UserService) SearchUsersByUserName(ctx context.Context, arg repo.Search
 	return s.q.SearchUsersByUserName(ctx, arg)
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, arg repo.UpdateUserParams) error {
-	return s.q.UpdateUser(ctx, arg)
+func (s *UserService) UpdateUserByID(ctx context.Context, arg repo.UpdateUserByIDParams) error {
+	return s.q.UpdateUserByID(ctx, arg)
 }

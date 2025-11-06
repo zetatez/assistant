@@ -44,7 +44,7 @@ func GetOSDefaultEditor() string {
 		OsMap["macos"]: "nvim",
 	}
 	if editor, ok := OsDefaultEditor[GetOSType()]; ok {
-		return editor, nil
+		return editor
 	}
 	Notify("Unsupported OS")
 	return ""

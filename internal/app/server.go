@@ -1,30 +1,36 @@
 package app
 
 import (
+	_ "assistant/docs"
 	"assistant/internal/app/module"
 	"assistant/internal/app/modules/health"
 	"assistant/internal/app/modules/user"
-	"log"
+	"assistant/internal/cfg"
+	"assistant/internal/log"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func Run() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
-	// modules
 	modules := []module.Module{
 		health.NewHealthModule(),
 		user.NewUserModule(),
 	}
 
 	for _, m := range modules {
-		log.Printf("registering module: %s", m.Name())
+		log.Logger.Printf("✅ - register module %s", m.Name())
 		m.Register(r)
 	}
-	// r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	log.Println("Server running at :8080")
-	r.Run(":8080")
+	log.Logger.Infof("✅ swag on: http://127.0.0.1:%d/swagger/index.html", cfg.C.App.Port)
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	log.Logger.Infof("✅ Server running at :%d", cfg.C.App.Port)
+	r.Run(fmt.Sprintf(":%d", cfg.C.App.Port))
 }

@@ -1,0 +1,28 @@
+
+CREATE TABLE IF NOT EXISTS task_def (
+  id BIGINT AUTO_INCREMENT NOT NULL,
+  gmt_create TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  gmt_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  task_type ENUM('ATOMIC', 'COMPOSITE') NOT NULL DEFAULT 'ATOMIC',
+  config JSON DEFAULT NULL,
+  retry_policy JSON DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_n (name),
+  KEY idx_n_tt (name, task_type)
+) COMMENT='任务定义表, 可复用模板';
+
+-- CREATE TABLE IF NOT EXISTS task_def (
+--   id BIGINT AUTO_INCREMENT NOT NULL,
+--   gmt_create TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--   gmt_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--   name VARCHAR(255) NOT NULL COMMENT '任务名称',
+--   description TEXT COMMENT '任务描述',
+--   task_type ENUM('ATOMIC', 'COMPOSITE') NOT NULL DEFAULT 'ATOMIC' COMMENT '任务类型',
+--   config JSON DEFAULT NULL COMMENT '任务配置, 例如脚本, HTTP请求等',
+--   retry_policy JSON DEFAULT NULL COMMENT '重试策略配置',
+--   PRIMARY KEY (id),
+--   UNIQUE KEY uk_ (name),
+--   KEY idx_n_tt (name, task_type)
+-- ) COMMENT='任务定义表: 可复用模板';
