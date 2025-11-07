@@ -54,39 +54,45 @@ func (q *Queries) CreateTaskDefRelation(ctx context.Context, arg CreateTaskDefRe
 	return q.db.ExecContext(ctx, createTaskDefRelation, arg.ParentID, arg.ChildID, arg.Ord)
 }
 
-const deleteTaskDefRelation = `-- name: DeleteTaskDefRelation :exec
+const deleteTaskDefRelationByID = `-- name: DeleteTaskDefRelationByID :execresult
+DELETE FROM task_def_relation
+WHERE id = ?
+`
+
+func (q *Queries) DeleteTaskDefRelationByID(ctx context.Context, id int64) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteTaskDefRelationByID, id)
+}
+
+const deleteTaskDefRelationByParentIDAndChildID = `-- name: DeleteTaskDefRelationByParentIDAndChildID :execresult
 DELETE FROM task_def_relation
 WHERE parent_id = ? AND child_id = ?
 `
 
-type DeleteTaskDefRelationParams struct {
+type DeleteTaskDefRelationByParentIDAndChildIDParams struct {
 	ParentID int64 `json:"parent_id"`
 	ChildID  int64 `json:"child_id"`
 }
 
-func (q *Queries) DeleteTaskDefRelation(ctx context.Context, arg DeleteTaskDefRelationParams) error {
-	_, err := q.db.ExecContext(ctx, deleteTaskDefRelation, arg.ParentID, arg.ChildID)
-	return err
+func (q *Queries) DeleteTaskDefRelationByParentIDAndChildID(ctx context.Context, arg DeleteTaskDefRelationByParentIDAndChildIDParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteTaskDefRelationByParentIDAndChildID, arg.ParentID, arg.ChildID)
 }
 
-const deleteTaskDefRelationsByChild = `-- name: DeleteTaskDefRelationsByChild :exec
+const deleteTaskDefRelationsByChildID = `-- name: DeleteTaskDefRelationsByChildID :execresult
 DELETE FROM task_def_relation
 WHERE child_id = ?
 `
 
-func (q *Queries) DeleteTaskDefRelationsByChild(ctx context.Context, childID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteTaskDefRelationsByChild, childID)
-	return err
+func (q *Queries) DeleteTaskDefRelationsByChildID(ctx context.Context, childID int64) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteTaskDefRelationsByChildID, childID)
 }
 
-const deleteTaskDefRelationsByParent = `-- name: DeleteTaskDefRelationsByParent :exec
+const deleteTaskDefRelationsByParentID = `-- name: DeleteTaskDefRelationsByParentID :execresult
 DELETE FROM task_def_relation
 WHERE parent_id = ?
 `
 
-func (q *Queries) DeleteTaskDefRelationsByParent(ctx context.Context, parentID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteTaskDefRelationsByParent, parentID)
-	return err
+func (q *Queries) DeleteTaskDefRelationsByParentID(ctx context.Context, parentID int64) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteTaskDefRelationsByParentID, parentID)
 }
 
 const getChildTaskDefs = `-- name: GetChildTaskDefs :many
@@ -286,6 +292,54 @@ func (q *Queries) GetTaskDefTree(ctx context.Context, parentID int64) ([]GetTask
 	return items, nil
 }
 
+const listTaskDefRelations = `-- name: ListTaskDefRelations :many
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  parent_id,
+  child_id,
+  ord
+FROM task_def_relation
+ORDER BY ID
+LIMIT ? OFFSET ?
+`
+
+type ListTaskDefRelationsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListTaskDefRelations(ctx context.Context, arg ListTaskDefRelationsParams) ([]TaskDefRelation, error) {
+	rows, err := q.db.QueryContext(ctx, listTaskDefRelations, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []TaskDefRelation{}
+	for rows.Next() {
+		var i TaskDefRelation
+		if err := rows.Scan(
+			&i.ID,
+			&i.GmtCreate,
+			&i.GmtModified,
+			&i.ParentID,
+			&i.ChildID,
+			&i.Ord,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTaskDefRelationsByChild = `-- name: ListTaskDefRelationsByChild :many
 SELECT
   id,
@@ -372,7 +426,31 @@ func (q *Queries) ListTaskDefRelationsByParent(ctx context.Context, parentID int
 	return items, nil
 }
 
-const updateTaskDefRelationOrd = `-- name: UpdateTaskDefRelationOrd :exec
+const updateTaskDefRelationByID = `-- name: UpdateTaskDefRelationByID :execresult
+UPDATE task_def_relation
+SET parent_id = ?,
+     child_id = ?,
+          ord = ?
+WHERE id = ?
+`
+
+type UpdateTaskDefRelationByIDParams struct {
+	ParentID int64         `json:"parent_id"`
+	ChildID  int64         `json:"child_id"`
+	Ord      sql.NullInt32 `json:"ord"`
+	ID       int64         `json:"id"`
+}
+
+func (q *Queries) UpdateTaskDefRelationByID(ctx context.Context, arg UpdateTaskDefRelationByIDParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateTaskDefRelationByID,
+		arg.ParentID,
+		arg.ChildID,
+		arg.Ord,
+		arg.ID,
+	)
+}
+
+const updateTaskDefRelationOrd = `-- name: UpdateTaskDefRelationOrd :execresult
 UPDATE task_def_relation
 SET ord = ?
 WHERE parent_id = ? AND child_id = ?
@@ -384,12 +462,11 @@ type UpdateTaskDefRelationOrdParams struct {
 	ChildID  int64         `json:"child_id"`
 }
 
-func (q *Queries) UpdateTaskDefRelationOrd(ctx context.Context, arg UpdateTaskDefRelationOrdParams) error {
-	_, err := q.db.ExecContext(ctx, updateTaskDefRelationOrd, arg.Ord, arg.ParentID, arg.ChildID)
-	return err
+func (q *Queries) UpdateTaskDefRelationOrd(ctx context.Context, arg UpdateTaskDefRelationOrdParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateTaskDefRelationOrd, arg.Ord, arg.ParentID, arg.ChildID)
 }
 
-const updateTaskDefRelationParent = `-- name: UpdateTaskDefRelationParent :exec
+const updateTaskDefRelationParent = `-- name: UpdateTaskDefRelationParent :execresult
 UPDATE task_def_relation
 SET parent_id = ?
 WHERE id = ?
@@ -400,7 +477,6 @@ type UpdateTaskDefRelationParentParams struct {
 	ID       int64 `json:"id"`
 }
 
-func (q *Queries) UpdateTaskDefRelationParent(ctx context.Context, arg UpdateTaskDefRelationParentParams) error {
-	_, err := q.db.ExecContext(ctx, updateTaskDefRelationParent, arg.ParentID, arg.ID)
-	return err
+func (q *Queries) UpdateTaskDefRelationParent(ctx context.Context, arg UpdateTaskDefRelationParentParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateTaskDefRelationParent, arg.ParentID, arg.ID)
 }

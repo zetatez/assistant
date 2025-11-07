@@ -10,15 +10,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"strings"
-	"time"
 )
 
-const batchDeleteTaskDefs = `-- name: BatchDeleteTaskDefs :exec
+const batchDeleteTaskDefByID = `-- name: BatchDeleteTaskDefByID :execresult
 DELETE FROM task_def WHERE id IN (/*SLICE:ids*/?)
 `
 
-func (q *Queries) BatchDeleteTaskDefs(ctx context.Context, ids []int64) error {
-	query := batchDeleteTaskDefs
+func (q *Queries) BatchDeleteTaskDefByID(ctx context.Context, ids []int64) (sql.Result, error) {
+	query := batchDeleteTaskDefByID
 	var queryParams []interface{}
 	if len(ids) > 0 {
 		for _, v := range ids {
@@ -28,8 +27,7 @@ func (q *Queries) BatchDeleteTaskDefs(ctx context.Context, ids []int64) error {
 	} else {
 		query = strings.Replace(query, "/*SLICE:ids*/?", "NULL", 1)
 	}
-	_, err := q.db.ExecContext(ctx, query, queryParams...)
-	return err
+	return q.db.ExecContext(ctx, query, queryParams...)
 }
 
 const countTaskDefs = `-- name: CountTaskDefs :one
@@ -71,13 +69,12 @@ func (q *Queries) CreateTaskDef(ctx context.Context, arg CreateTaskDefParams) (s
 	)
 }
 
-const deleteTaskDef = `-- name: DeleteTaskDef :exec
+const deleteTaskDefByID = `-- name: DeleteTaskDefByID :execresult
 DELETE FROM task_def WHERE id = ? LIMIT 1
 `
 
-func (q *Queries) DeleteTaskDef(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteTaskDef, id)
-	return err
+func (q *Queries) DeleteTaskDefByID(ctx context.Context, id int64) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteTaskDefByID, id)
 }
 
 const getTaskDefByID = `-- name: GetTaskDefByID :one
@@ -144,13 +141,13 @@ func (q *Queries) GetTaskDefByName(ctx context.Context, name string) (TaskDef, e
 const listTaskDefs = `-- name: ListTaskDefs :many
 SELECT
   id,
+  gmt_create,
+  gmt_modified,
   name,
   description,
   task_type,
   config,
-  retry_policy,
-  gmt_create,
-  gmt_modified
+  retry_policy
 FROM task_def
 ORDER BY id DESC
 LIMIT ? OFFSET ?
@@ -161,35 +158,24 @@ type ListTaskDefsParams struct {
 	Offset int32 `json:"offset"`
 }
 
-type ListTaskDefsRow struct {
-	ID          int64           `json:"id"`
-	Name        string          `json:"name"`
-	Description sql.NullString  `json:"description"`
-	TaskType    TaskDefTaskType `json:"task_type"`
-	Config      json.RawMessage `json:"config"`
-	RetryPolicy json.RawMessage `json:"retry_policy"`
-	GmtCreate   time.Time       `json:"gmt_create"`
-	GmtModified time.Time       `json:"gmt_modified"`
-}
-
-func (q *Queries) ListTaskDefs(ctx context.Context, arg ListTaskDefsParams) ([]ListTaskDefsRow, error) {
+func (q *Queries) ListTaskDefs(ctx context.Context, arg ListTaskDefsParams) ([]TaskDef, error) {
 	rows, err := q.db.QueryContext(ctx, listTaskDefs, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListTaskDefsRow{}
+	items := []TaskDef{}
 	for rows.Next() {
-		var i ListTaskDefsRow
+		var i TaskDef
 		if err := rows.Scan(
 			&i.ID,
+			&i.GmtCreate,
+			&i.GmtModified,
 			&i.Name,
 			&i.Description,
 			&i.TaskType,
 			&i.Config,
 			&i.RetryPolicy,
-			&i.GmtCreate,
-			&i.GmtModified,
 		); err != nil {
 			return nil, err
 		}
@@ -312,7 +298,7 @@ func (q *Queries) SearchTaskDefsByName(ctx context.Context, arg SearchTaskDefsBy
 	return items, nil
 }
 
-const updateTaskDef = `-- name: UpdateTaskDef :exec
+const updateTaskDefByID = `-- name: UpdateTaskDefByID :execresult
 UPDATE task_def
 SET
   name = ?,
@@ -324,7 +310,7 @@ WHERE id = ?
 LIMIT 1
 `
 
-type UpdateTaskDefParams struct {
+type UpdateTaskDefByIDParams struct {
 	Name        string          `json:"name"`
 	Description sql.NullString  `json:"description"`
 	TaskType    TaskDefTaskType `json:"task_type"`
@@ -333,8 +319,8 @@ type UpdateTaskDefParams struct {
 	ID          int64           `json:"id"`
 }
 
-func (q *Queries) UpdateTaskDef(ctx context.Context, arg UpdateTaskDefParams) error {
-	_, err := q.db.ExecContext(ctx, updateTaskDef,
+func (q *Queries) UpdateTaskDefByID(ctx context.Context, arg UpdateTaskDefByIDParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateTaskDefByID,
 		arg.Name,
 		arg.Description,
 		arg.TaskType,
@@ -342,22 +328,20 @@ func (q *Queries) UpdateTaskDef(ctx context.Context, arg UpdateTaskDefParams) er
 		arg.RetryPolicy,
 		arg.ID,
 	)
-	return err
 }
 
-const updateTaskDefConfig = `-- name: UpdateTaskDefConfig :exec
+const updateTaskDefConfigByID = `-- name: UpdateTaskDefConfigByID :execresult
 UPDATE task_def
 SET config = ?, retry_policy = ?
 WHERE id = ?
 `
 
-type UpdateTaskDefConfigParams struct {
+type UpdateTaskDefConfigByIDParams struct {
 	Config      json.RawMessage `json:"config"`
 	RetryPolicy json.RawMessage `json:"retry_policy"`
 	ID          int64           `json:"id"`
 }
 
-func (q *Queries) UpdateTaskDefConfig(ctx context.Context, arg UpdateTaskDefConfigParams) error {
-	_, err := q.db.ExecContext(ctx, updateTaskDefConfig, arg.Config, arg.RetryPolicy, arg.ID)
-	return err
+func (q *Queries) UpdateTaskDefConfigByID(ctx context.Context, arg UpdateTaskDefConfigByIDParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateTaskDefConfigByID, arg.Config, arg.RetryPolicy, arg.ID)
 }

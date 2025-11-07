@@ -15,15 +15,19 @@ INSERT INTO task_def_relation (
   ord
 ) VALUES (?, ?, ?);
 
--- name: DeleteTaskDefRelation :exec
+-- name: DeleteTaskDefRelationByID :execresult
+DELETE FROM task_def_relation
+WHERE id = ?;
+
+-- name: DeleteTaskDefRelationByParentIDAndChildID :execresult
 DELETE FROM task_def_relation
 WHERE parent_id = ? AND child_id = ?;
 
--- name: DeleteTaskDefRelationsByParent :exec
+-- name: DeleteTaskDefRelationsByParentID :execresult
 DELETE FROM task_def_relation
 WHERE parent_id = ?;
 
--- name: DeleteTaskDefRelationsByChild :exec
+-- name: DeleteTaskDefRelationsByChildID :execresult
 DELETE FROM task_def_relation
 WHERE child_id = ?;
 
@@ -37,6 +41,18 @@ SELECT
   ord
 FROM task_def_relation
 WHERE id = ?;
+
+-- name: ListTaskDefRelations :many
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  parent_id,
+  child_id,
+  ord
+FROM task_def_relation
+ORDER BY ID
+LIMIT ? OFFSET ?;
 
 -- name: ListTaskDefRelationsByParent :many
 SELECT
@@ -89,12 +105,19 @@ JOIN task_def AS td ON td.id = tdr.parent_id
 WHERE tdr.child_id = ?
 LIMIT 1;
 
--- name: UpdateTaskDefRelationOrd :exec
+-- name: UpdateTaskDefRelationByID :execresult
+UPDATE task_def_relation
+SET parent_id = ?,
+     child_id = ?,
+          ord = ?
+WHERE id = ?;
+
+-- name: UpdateTaskDefRelationOrd :execresult
 UPDATE task_def_relation
 SET ord = ?
 WHERE parent_id = ? AND child_id = ?;
 
--- name: UpdateTaskDefRelationParent :exec
+-- name: UpdateTaskDefRelationParent :execresult
 UPDATE task_def_relation
 SET parent_id = ?
 WHERE id = ?;

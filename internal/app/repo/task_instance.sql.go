@@ -11,6 +11,18 @@ import (
 	"encoding/json"
 )
 
+const countTaskInstances = `-- name: CountTaskInstances :one
+SELECT COUNT(*) AS cnt
+FROM task_instance
+`
+
+func (q *Queries) CountTaskInstances(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countTaskInstances)
+	var cnt int64
+	err := row.Scan(&cnt)
+	return cnt, err
+}
+
 const countTaskInstancesByDefID = `-- name: CountTaskInstancesByDefID :one
 SELECT COUNT(*) AS cnt
 FROM task_instance
@@ -69,22 +81,20 @@ func (q *Queries) CreateTaskInstance(ctx context.Context, arg CreateTaskInstance
 	)
 }
 
-const deleteTaskInstanceByID = `-- name: DeleteTaskInstanceByID :exec
+const deleteTaskInstanceByID = `-- name: DeleteTaskInstanceByID :execresult
 DELETE FROM task_instance WHERE id = ? LIMIT 1
 `
 
-func (q *Queries) DeleteTaskInstanceByID(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteTaskInstanceByID, id)
-	return err
+func (q *Queries) DeleteTaskInstanceByID(ctx context.Context, id int64) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteTaskInstanceByID, id)
 }
 
-const deleteTaskInstancesByParent = `-- name: DeleteTaskInstancesByParent :exec
+const deleteTaskInstancesByParent = `-- name: DeleteTaskInstancesByParent :execresult
 DELETE FROM task_instance WHERE parent_instance_id = ?
 `
 
-func (q *Queries) DeleteTaskInstancesByParent(ctx context.Context, parentInstanceID sql.NullInt64) error {
-	_, err := q.db.ExecContext(ctx, deleteTaskInstancesByParent, parentInstanceID)
-	return err
+func (q *Queries) DeleteTaskInstancesByParent(ctx context.Context, parentInstanceID sql.NullInt64) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteTaskInstancesByParent, parentInstanceID)
 }
 
 const getChildTaskInstances = `-- name: GetChildTaskInstances :many
@@ -191,7 +201,7 @@ func (q *Queries) GetRootTaskInstances(ctx context.Context, arg GetRootTaskInsta
 	return items, nil
 }
 
-const getTaskInstance = `-- name: GetTaskInstance :one
+const getTaskInstanceByID = `-- name: GetTaskInstanceByID :one
 SELECT
   id,
   gmt_create,
@@ -207,8 +217,8 @@ WHERE id = ?
 LIMIT 1
 `
 
-func (q *Queries) GetTaskInstance(ctx context.Context, id int64) (TaskInstance, error) {
-	row := q.db.QueryRowContext(ctx, getTaskInstance, id)
+func (q *Queries) GetTaskInstanceByID(ctx context.Context, id int64) (TaskInstance, error) {
+	row := q.db.QueryRowContext(ctx, getTaskInstanceByID, id)
 	var i TaskInstance
 	err := row.Scan(
 		&i.ID,
@@ -576,55 +586,89 @@ func (q *Queries) LockTaskInstanceForUpdate(ctx context.Context, id int64) (Task
 	return i, err
 }
 
-const resetTaskInstanceStatus = `-- name: ResetTaskInstanceStatus :exec
+const resetTaskInstanceStatus = `-- name: ResetTaskInstanceStatus :execresult
 UPDATE task_instance
 SET status = 'PENDING', result = NULL, err_msg = NULL
 WHERE id = ?
 LIMIT 1
 `
 
-func (q *Queries) ResetTaskInstanceStatus(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, resetTaskInstanceStatus, id)
-	return err
+func (q *Queries) ResetTaskInstanceStatus(ctx context.Context, id int64) (sql.Result, error) {
+	return q.db.ExecContext(ctx, resetTaskInstanceStatus, id)
 }
 
-const updateTaskInstanceResult = `-- name: UpdateTaskInstanceResult :exec
+const updateTaskInstanceByID = `-- name: UpdateTaskInstanceByID :execresult
+UPDATE task_instance
+SET status = ?,
+    task_def_id = ?,
+    parent_instance_id = ?,
+    ord = ?,
+    status = ?,
+    result = ?,
+    err_msg = ?
+WHERE id = ?
+LIMIT 1
+`
+
+type UpdateTaskInstanceByIDParams struct {
+	Status           NullTaskInstanceStatus `json:"status"`
+	TaskDefID        int64                  `json:"task_def_id"`
+	ParentInstanceID sql.NullInt64          `json:"parent_instance_id"`
+	Ord              sql.NullInt32          `json:"ord"`
+	Status_2         NullTaskInstanceStatus `json:"status_2"`
+	Result           json.RawMessage        `json:"result"`
+	ErrMsg           sql.NullString         `json:"err_msg"`
+	ID               int64                  `json:"id"`
+}
+
+func (q *Queries) UpdateTaskInstanceByID(ctx context.Context, arg UpdateTaskInstanceByIDParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateTaskInstanceByID,
+		arg.Status,
+		arg.TaskDefID,
+		arg.ParentInstanceID,
+		arg.Ord,
+		arg.Status_2,
+		arg.Result,
+		arg.ErrMsg,
+		arg.ID,
+	)
+}
+
+const updateTaskInstanceResultByID = `-- name: UpdateTaskInstanceResultByID :execresult
 UPDATE task_instance
 SET result = ?, err_msg = ?, status = ?
 WHERE id = ?
 LIMIT 1
 `
 
-type UpdateTaskInstanceResultParams struct {
+type UpdateTaskInstanceResultByIDParams struct {
 	Result json.RawMessage        `json:"result"`
 	ErrMsg sql.NullString         `json:"err_msg"`
 	Status NullTaskInstanceStatus `json:"status"`
 	ID     int64                  `json:"id"`
 }
 
-func (q *Queries) UpdateTaskInstanceResult(ctx context.Context, arg UpdateTaskInstanceResultParams) error {
-	_, err := q.db.ExecContext(ctx, updateTaskInstanceResult,
+func (q *Queries) UpdateTaskInstanceResultByID(ctx context.Context, arg UpdateTaskInstanceResultByIDParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateTaskInstanceResultByID,
 		arg.Result,
 		arg.ErrMsg,
 		arg.Status,
 		arg.ID,
 	)
-	return err
 }
 
-const updateTaskInstanceStatus = `-- name: UpdateTaskInstanceStatus :exec
+const updateTaskInstanceStatusByID = `-- name: UpdateTaskInstanceStatusByID :execresult
 UPDATE task_instance
 SET status = ?
 WHERE id = ?
 LIMIT 1
 `
 
-type UpdateTaskInstanceStatusParams struct {
+type UpdateTaskInstanceStatusByIDParams struct {
 	Status NullTaskInstanceStatus `json:"status"`
 	ID     int64                  `json:"id"`
 }
 
-func (q *Queries) UpdateTaskInstanceStatus(ctx context.Context, arg UpdateTaskInstanceStatusParams) error {
-	_, err := q.db.ExecContext(ctx, updateTaskInstanceStatus, arg.Status, arg.ID)
-	return err
+func (q *Queries) UpdateTaskInstanceStatusByID(ctx context.Context, arg UpdateTaskInstanceStatusByIDParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateTaskInstanceStatusByID, arg.Status, arg.ID)
 }

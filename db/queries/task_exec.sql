@@ -14,7 +14,7 @@ INSERT INTO task_exec (
 )
 VALUES (?, ?, ?, ?, ?);
 
--- name: DeleteTaskExecByID :exec
+-- name: DeleteTaskExecByID :execresult
 DELETE FROM task_exec WHERE id = ? LIMIT 1;
 
 -- name: GetTaskExecByID :one
@@ -77,26 +77,34 @@ LIMIT 1;
 -- name: GetTaskExecLogByID :one
 SELECT log FROM task_exec WHERE id = ?;
 
--- name: UpdateTaskExecStatus :exec
+-- name: UpdateTaskExecByID :execresult
+UPDATE task_exec
+SET task_instance_id = ?,
+           gmt_start = ?,
+             gmt_end = ?,
+              status = ?,
+                 log = ?
+WHERE id = ?;
+
+-- name: UpdateTaskExecStatus :execresult
 UPDATE task_exec
 SET status = ?
 WHERE id = ?;
 
--- name: MarkTaskExecSuccess :exec
+-- name: MarkTaskExecSuccess :execresult
 UPDATE task_exec
 SET status = 'SUCCESS'
 WHERE id = ?;
 
--- name: MarkTaskExecFailed :exec
+-- name: MarkTaskExecFailed :execresult
 UPDATE task_exec
 SET status = 'FAILED', log = CONCAT(log, '\n', ?)
 WHERE id = ?;
 
--- name: AppendTaskExecLog :exec
+-- name: AppendTaskExecLog :execresult
 UPDATE task_exec
 SET log = CONCAT(COALESCE(log, ''), '\n', ?)
 WHERE id = ?;
-
 
 -- name: CountTaskExecsStatus :one
 SELECT

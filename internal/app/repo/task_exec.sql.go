@@ -10,7 +10,7 @@ import (
 	"database/sql"
 )
 
-const appendTaskExecLog = `-- name: AppendTaskExecLog :exec
+const appendTaskExecLog = `-- name: AppendTaskExecLog :execresult
 UPDATE task_exec
 SET log = CONCAT(COALESCE(log, ''), '\n', ?)
 WHERE id = ?
@@ -21,9 +21,8 @@ type AppendTaskExecLogParams struct {
 	ID     int64       `json:"id"`
 }
 
-func (q *Queries) AppendTaskExecLog(ctx context.Context, arg AppendTaskExecLogParams) error {
-	_, err := q.db.ExecContext(ctx, appendTaskExecLog, arg.CONCAT, arg.ID)
-	return err
+func (q *Queries) AppendTaskExecLog(ctx context.Context, arg AppendTaskExecLogParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, appendTaskExecLog, arg.CONCAT, arg.ID)
 }
 
 const countTaskExecsByInstanceID = `-- name: CountTaskExecsByInstanceID :one
@@ -119,13 +118,12 @@ func (q *Queries) CreateTaskExec(ctx context.Context, arg CreateTaskExecParams) 
 	)
 }
 
-const deleteTaskExecByID = `-- name: DeleteTaskExecByID :exec
+const deleteTaskExecByID = `-- name: DeleteTaskExecByID :execresult
 DELETE FROM task_exec WHERE id = ? LIMIT 1
 `
 
-func (q *Queries) DeleteTaskExecByID(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteTaskExecByID, id)
-	return err
+func (q *Queries) DeleteTaskExecByID(ctx context.Context, id int64) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteTaskExecByID, id)
 }
 
 const getAvgTaskExecDurationByTaskInstanceID = `-- name: GetAvgTaskExecDurationByTaskInstanceID :one
@@ -436,7 +434,7 @@ func (q *Queries) ListTaskExecsByTaskInstanceID(ctx context.Context, taskInstanc
 	return items, nil
 }
 
-const markTaskExecFailed = `-- name: MarkTaskExecFailed :exec
+const markTaskExecFailed = `-- name: MarkTaskExecFailed :execresult
 UPDATE task_exec
 SET status = 'FAILED', log = CONCAT(log, '\n', ?)
 WHERE id = ?
@@ -447,23 +445,51 @@ type MarkTaskExecFailedParams struct {
 	ID     int64       `json:"id"`
 }
 
-func (q *Queries) MarkTaskExecFailed(ctx context.Context, arg MarkTaskExecFailedParams) error {
-	_, err := q.db.ExecContext(ctx, markTaskExecFailed, arg.CONCAT, arg.ID)
-	return err
+func (q *Queries) MarkTaskExecFailed(ctx context.Context, arg MarkTaskExecFailedParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, markTaskExecFailed, arg.CONCAT, arg.ID)
 }
 
-const markTaskExecSuccess = `-- name: MarkTaskExecSuccess :exec
+const markTaskExecSuccess = `-- name: MarkTaskExecSuccess :execresult
 UPDATE task_exec
 SET status = 'SUCCESS'
 WHERE id = ?
 `
 
-func (q *Queries) MarkTaskExecSuccess(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, markTaskExecSuccess, id)
-	return err
+func (q *Queries) MarkTaskExecSuccess(ctx context.Context, id int64) (sql.Result, error) {
+	return q.db.ExecContext(ctx, markTaskExecSuccess, id)
 }
 
-const updateTaskExecStatus = `-- name: UpdateTaskExecStatus :exec
+const updateTaskExecByID = `-- name: UpdateTaskExecByID :execresult
+UPDATE task_exec
+SET task_instance_id = ?,
+           gmt_start = ?,
+             gmt_end = ?,
+              status = ?,
+                 log = ?
+WHERE id = ?
+`
+
+type UpdateTaskExecByIDParams struct {
+	TaskInstanceID int64              `json:"task_instance_id"`
+	GmtStart       sql.NullTime       `json:"gmt_start"`
+	GmtEnd         sql.NullTime       `json:"gmt_end"`
+	Status         NullTaskExecStatus `json:"status"`
+	Log            sql.NullString     `json:"log"`
+	ID             int64              `json:"id"`
+}
+
+func (q *Queries) UpdateTaskExecByID(ctx context.Context, arg UpdateTaskExecByIDParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateTaskExecByID,
+		arg.TaskInstanceID,
+		arg.GmtStart,
+		arg.GmtEnd,
+		arg.Status,
+		arg.Log,
+		arg.ID,
+	)
+}
+
+const updateTaskExecStatus = `-- name: UpdateTaskExecStatus :execresult
 UPDATE task_exec
 SET status = ?
 WHERE id = ?
@@ -474,7 +500,6 @@ type UpdateTaskExecStatusParams struct {
 	ID     int64              `json:"id"`
 }
 
-func (q *Queries) UpdateTaskExecStatus(ctx context.Context, arg UpdateTaskExecStatusParams) error {
-	_, err := q.db.ExecContext(ctx, updateTaskExecStatus, arg.Status, arg.ID)
-	return err
+func (q *Queries) UpdateTaskExecStatus(ctx context.Context, arg UpdateTaskExecStatusParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateTaskExecStatus, arg.Status, arg.ID)
 }

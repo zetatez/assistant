@@ -3,7 +3,7 @@
 INSERT INTO user (user_name, password, email)
 VALUES (?, ?, ?);
 
--- name: DeleteUserByID :exec
+-- name: DeleteUserByID :execresult
 DELETE FROM user
 WHERE id = ?
 LIMIT 1;
@@ -61,7 +61,7 @@ WHERE email like ?
 ORDER BY id DESC
 LIMIT ? OFFSET ?;
 
--- name: UpdateUserByID :exec
+-- name: UpdateUserByID :execresult
 UPDATE user
 SET user_name = ?,
      password = ?,

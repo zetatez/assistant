@@ -1,4 +1,8 @@
 
+-- name: CountTaskInstances :one
+SELECT COUNT(*) AS cnt
+FROM task_instance;
+
 -- name: CountTaskInstancesByStatus :one
 SELECT COUNT(*) AS cnt
 FROM task_instance
@@ -20,13 +24,13 @@ INSERT INTO task_instance (
 )
 VALUES (?, ?, ?, ?, ?, ?);
 
--- name: DeleteTaskInstanceByID :exec
+-- name: DeleteTaskInstanceByID :execresult
 DELETE FROM task_instance WHERE id = ? LIMIT 1;
 
--- name: DeleteTaskInstancesByParent :exec
+-- name: DeleteTaskInstancesByParent :execresult
 DELETE FROM task_instance WHERE parent_instance_id = ?;
 
--- name: GetTaskInstance :one
+-- name: GetTaskInstanceByID :one
 SELECT
   id,
   gmt_create,
@@ -56,19 +60,31 @@ FROM task_instance
 ORDER BY ID DESC
 LIMIT ? OFFSET ?;
 
--- name: UpdateTaskInstanceStatus :exec
+-- name: UpdateTaskInstanceByID :execresult
+UPDATE task_instance
+SET status = ?,
+    task_def_id = ?,
+    parent_instance_id = ?,
+    ord = ?,
+    status = ?,
+    result = ?,
+    err_msg = ?
+WHERE id = ?
+LIMIT 1;
+
+-- name: UpdateTaskInstanceStatusByID :execresult
 UPDATE task_instance
 SET status = ?
 WHERE id = ?
 LIMIT 1;
 
--- name: UpdateTaskInstanceResult :exec
+-- name: UpdateTaskInstanceResultByID :execresult
 UPDATE task_instance
 SET result = ?, err_msg = ?, status = ?
 WHERE id = ?
 LIMIT 1;
 
--- name: ResetTaskInstanceStatus :exec
+-- name: ResetTaskInstanceStatus :execresult
 UPDATE task_instance
 SET status = 'PENDING', result = NULL, err_msg = NULL
 WHERE id = ?

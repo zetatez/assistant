@@ -36,15 +36,14 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Res
 	return q.db.ExecContext(ctx, createUser, arg.UserName, arg.Password, arg.Email)
 }
 
-const deleteUserByID = `-- name: DeleteUserByID :exec
+const deleteUserByID = `-- name: DeleteUserByID :execresult
 DELETE FROM user
 WHERE id = ?
 LIMIT 1
 `
 
-func (q *Queries) DeleteUserByID(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteUserByID, id)
-	return err
+func (q *Queries) DeleteUserByID(ctx context.Context, id int64) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteUserByID, id)
 }
 
 const getUserByID = `-- name: GetUserByID :one
@@ -222,7 +221,7 @@ func (q *Queries) SearchUsersByUserName(ctx context.Context, arg SearchUsersByUs
 	return items, nil
 }
 
-const updateUserByID = `-- name: UpdateUserByID :exec
+const updateUserByID = `-- name: UpdateUserByID :execresult
 UPDATE user
 SET user_name = ?,
      password = ?,
@@ -238,12 +237,11 @@ type UpdateUserByIDParams struct {
 	ID       int64  `json:"id"`
 }
 
-func (q *Queries) UpdateUserByID(ctx context.Context, arg UpdateUserByIDParams) error {
-	_, err := q.db.ExecContext(ctx, updateUserByID,
+func (q *Queries) UpdateUserByID(ctx context.Context, arg UpdateUserByIDParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateUserByID,
 		arg.UserName,
 		arg.Password,
 		arg.Email,
 		arg.ID,
 	)
-	return err
 }
