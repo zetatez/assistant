@@ -62,12 +62,12 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		response.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	err := h.svc.CreateUser(c, req)
+	data, err := h.svc.CreateUser(c, req)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.Ok(c, nil)
+	response.Ok(c, data)
 }
 
 // DeleteUserByID godoc
@@ -86,12 +86,12 @@ func (h *UserHandler) DeleteUserByID(c *gin.Context) {
 		response.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	err = h.svc.DeleteUserByID(c, id)
+	data, err := h.svc.DeleteUserByID(c, id)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.Ok(c, nil)
+	response.Ok(c, data)
 }
 
 // GetUserByID godoc
@@ -210,10 +210,10 @@ func (h *UserHandler) UpdateUserByID(c *gin.Context) {
 		response.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	err := h.svc.UpdateUserByID(c, req)
+	data, err := h.svc.UpdateUserByID(c, req)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.Ok(c, nil)
+	response.Ok(c, data)
 }
