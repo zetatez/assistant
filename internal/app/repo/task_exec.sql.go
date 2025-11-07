@@ -152,14 +152,14 @@ func (q *Queries) GetAvgTaskExecDurationByTaskInstanceID(ctx context.Context, ta
 
 const getLastTaskExecByInstanceID = `-- name: GetLastTaskExecByInstanceID :one
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_instance_id,
-gmt_start,
-gmt_end,
-status,
-log
+  id,
+  gmt_create,
+  gmt_modified,
+  task_instance_id,
+  gmt_start,
+  gmt_end,
+  status,
+  log
 FROM task_exec
 WHERE task_instance_id = ?
 ORDER BY gmt_start DESC
@@ -184,14 +184,14 @@ func (q *Queries) GetLastTaskExecByInstanceID(ctx context.Context, taskInstanceI
 
 const getTaskExecByID = `-- name: GetTaskExecByID :one
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_instance_id,
-gmt_start,
-gmt_end,
-status,
-log
+  id,
+  gmt_create,
+  gmt_modified,
+  task_instance_id,
+  gmt_start,
+  gmt_end,
+  status,
+  log
 FROM task_exec
 WHERE id = ?
 LIMIT 1
@@ -339,14 +339,14 @@ func (q *Queries) ListTaskExecDetailsByTaskDefID(ctx context.Context, arg ListTa
 
 const listTaskExecs = `-- name: ListTaskExecs :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_instance_id,
-gmt_start,
-gmt_end,
-status,
-log
+  id,
+  gmt_create,
+  gmt_modified,
+  task_instance_id,
+  gmt_start,
+  gmt_end,
+  status,
+  log
 FROM task_exec
 ORDER BY id DESC
 LIMIT ? OFFSET ?
@@ -391,14 +391,14 @@ func (q *Queries) ListTaskExecs(ctx context.Context, arg ListTaskExecsParams) ([
 
 const listTaskExecsByTaskInstanceID = `-- name: ListTaskExecsByTaskInstanceID :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_instance_id,
-gmt_start,
-gmt_end,
-status,
-log
+  id,
+  gmt_create,
+  gmt_modified,
+  task_instance_id,
+  gmt_start,
+  gmt_end,
+  status,
+  log
 FROM task_exec
 WHERE task_instance_id = ?
 ORDER BY ID DESC

@@ -48,12 +48,13 @@ func (q *Queries) DeleteUserByID(ctx context.Context, id int64) error {
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       user_name,
-       password,
-       email
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  user_name,
+  password,
+  email
 FROM user
 WHERE id = ?
 LIMIT 1
@@ -74,12 +75,13 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       user_name,
-       password,
-       email
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  user_name,
+  password,
+  email
 FROM user
 ORDER BY id DESC
 LIMIT ? OFFSET ?
@@ -121,12 +123,13 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 }
 
 const searchUsersByEmail = `-- name: SearchUsersByEmail :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       user_name,
-       password,
-       email
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  user_name,
+  password,
+  email
 FROM user
 WHERE email like ?
 ORDER BY id DESC
@@ -170,12 +173,13 @@ func (q *Queries) SearchUsersByEmail(ctx context.Context, arg SearchUsersByEmail
 }
 
 const searchUsersByUserName = `-- name: SearchUsersByUserName :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       user_name,
-       password,
-       email
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  user_name,
+  password,
+  email
 FROM user
 WHERE user_name like ?
 ORDER BY id DESC

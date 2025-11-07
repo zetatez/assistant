@@ -47,13 +47,14 @@ func (q *Queries) DeleteTodoListByID(ctx context.Context, id int64) (sql.Result,
 }
 
 const getTodoListByID = `-- name: GetTodoListByID :one
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       title,
-       content,
-       deadline,
-       is_done
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  title,
+  content,
+  deadline,
+  is_done
 FROM todo_list
 WHERE id = ?
 LIMIT 1
@@ -75,13 +76,14 @@ func (q *Queries) GetTodoListByID(ctx context.Context, id int64) (TodoList, erro
 }
 
 const listTodoLists = `-- name: ListTodoLists :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       title,
-       content,
-       deadline,
-       is_done
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  title,
+  content,
+  deadline,
+  is_done
 FROM todo_list
 ORDER BY id DESC
 LIMIT ? OFFSET ?
@@ -135,13 +137,14 @@ func (q *Queries) MarkTodoListAsDoneByID(ctx context.Context, id int64) (sql.Res
 }
 
 const searchTodoListsByContent = `-- name: SearchTodoListsByContent :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       title,
-       content,
-       deadline,
-       is_done
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  title,
+  content,
+  deadline,
+  is_done
 FROM todo_list
 WHERE content like ?
 ORDER BY id DESC
@@ -186,13 +189,14 @@ func (q *Queries) SearchTodoListsByContent(ctx context.Context, arg SearchTodoLi
 }
 
 const searchTodoListsByDeadlineLT = `-- name: SearchTodoListsByDeadlineLT :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       title,
-       content,
-       deadline,
-       is_done
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  title,
+  content,
+  deadline,
+  is_done
 FROM todo_list
 WHERE deadline < ?
 ORDER BY id DESC
@@ -237,13 +241,14 @@ func (q *Queries) SearchTodoListsByDeadlineLT(ctx context.Context, arg SearchTod
 }
 
 const searchTodoListsByTitle = `-- name: SearchTodoListsByTitle :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       title,
-       content,
-       deadline,
-       is_done
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  title,
+  content,
+  deadline,
+  is_done
 FROM todo_list
 WHERE title like ?
 ORDER BY id DESC
@@ -288,13 +293,14 @@ func (q *Queries) SearchTodoListsByTitle(ctx context.Context, arg SearchTodoList
 }
 
 const searchTodoListsByTitleAndContent = `-- name: SearchTodoListsByTitleAndContent :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       title,
-       content,
-       deadline,
-       is_done
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  title,
+  content,
+  deadline,
+  is_done
 FROM todo_list
 WHERE title like ?
   AND content like ?

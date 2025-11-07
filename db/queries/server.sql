@@ -12,68 +12,73 @@ LIMIT 1;
 SELECT count(*) ct FROM server;
 
 -- name: GetServerByID :one
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       idc,
-       svr_ip,
-       ak,
-       sk,
-       svr_status
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  idc,
+  svr_ip,
+  ak,
+  sk,
+  svr_status
 FROM server
 WHERE id = ?
 LIMIT 1;
 
 -- name: ListServers :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       idc,
-       svr_ip,
-       ak,
-       sk,
-       svr_status
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  idc,
+  svr_ip,
+  ak,
+  sk,
+  svr_status
 FROM server
 ORDER BY id DESC
 LIMIT ? OFFSET ?;
 
 -- name: SearchServersByIDC :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       idc,
-       svr_ip,
-       ak,
-       sk,
-       svr_status
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  idc,
+  svr_ip,
+  ak,
+  sk,
+  svr_status
 FROM server
 WHERE idc = ?
 ORDER BY id DESC
 LIMIT ? OFFSET ?;
 
 -- name: SearchServersBySvrIP :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       idc,
-       svr_ip,
-       ak,
-       sk,
-       svr_status
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  idc,
+  svr_ip,
+  ak,
+  sk,
+  svr_status
 FROM server
 WHERE svr_ip like ?
 ORDER BY id DESC
 LIMIT ? OFFSET ?;
 
 -- name: SearchServersByIDCAndSvrIP :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       idc,
-       svr_ip,
-       ak,
-       sk,
-       svr_status
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  idc,
+  svr_ip,
+  ak,
+  sk,
+  svr_status
 FROM server
 WHERE idc like ?
   AND svr_ip like ?

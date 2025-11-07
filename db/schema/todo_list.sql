@@ -9,3 +9,4 @@ CREATE TABLE IF NOT EXISTS todo_list (
 	is_done BOOLEAN NOT NULL DEFAULT TRUE,
 	PRIMARY KEY (id)
 ) COMMENT='代办事项表';
+

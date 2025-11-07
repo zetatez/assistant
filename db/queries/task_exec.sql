@@ -19,56 +19,56 @@ DELETE FROM task_exec WHERE id = ? LIMIT 1;
 
 -- name: GetTaskExecByID :one
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_instance_id,
-gmt_start,
-gmt_end,
-status,
-log
+  id,
+  gmt_create,
+  gmt_modified,
+  task_instance_id,
+  gmt_start,
+  gmt_end,
+  status,
+  log
 FROM task_exec
 WHERE id = ?
 LIMIT 1;
 
 -- name: ListTaskExecs :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_instance_id,
-gmt_start,
-gmt_end,
-status,
-log
+  id,
+  gmt_create,
+  gmt_modified,
+  task_instance_id,
+  gmt_start,
+  gmt_end,
+  status,
+  log
 FROM task_exec
 ORDER BY id DESC
 LIMIT ? OFFSET ?;
 
 -- name: ListTaskExecsByTaskInstanceID :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_instance_id,
-gmt_start,
-gmt_end,
-status,
-log
+  id,
+  gmt_create,
+  gmt_modified,
+  task_instance_id,
+  gmt_start,
+  gmt_end,
+  status,
+  log
 FROM task_exec
 WHERE task_instance_id = ?
 ORDER BY ID DESC;
 
 -- name: GetLastTaskExecByInstanceID :one
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_instance_id,
-gmt_start,
-gmt_end,
-status,
-log
+  id,
+  gmt_create,
+  gmt_modified,
+  task_instance_id,
+  gmt_start,
+  gmt_end,
+  status,
+  log
 FROM task_exec
 WHERE task_instance_id = ?
 ORDER BY gmt_start DESC

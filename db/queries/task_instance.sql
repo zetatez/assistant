@@ -28,30 +28,30 @@ DELETE FROM task_instance WHERE parent_instance_id = ?;
 
 -- name: GetTaskInstance :one
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE id = ?
 LIMIT 1;
 
 -- name: ListTaskInstances :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 ORDER BY ID DESC
 LIMIT ? OFFSET ?;
@@ -76,30 +76,30 @@ LIMIT 1;
 
 -- name: GetChildTaskInstances :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE parent_instance_id = ?
 ORDER BY ord ASC;
 
 -- name: GetRootTaskInstances :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE parent_instance_id IS NULL
 ORDER BY id DESC
@@ -139,30 +139,30 @@ SELECT * FROM instance_tree ORDER BY parent_instance_id, ord;
 
 -- name: ListTaskInstancesByTaskDefID :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE task_def_id = ?
 ORDER BY gmt_create DESC;
 
 -- name: ListTaskInstancesByStatus :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE status = ?
 ORDER BY gmt_create DESC
@@ -170,30 +170,30 @@ LIMIT ? OFFSET ?;
 
 -- name: LockTaskInstanceForUpdate :one
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE id = ?
 FOR UPDATE;
 
 -- name: LockPendingInstances :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE status = 'PENDING'
 ORDER BY id DESC

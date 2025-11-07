@@ -53,14 +53,15 @@ func (q *Queries) DeleteServer(ctx context.Context, id int64) (sql.Result, error
 }
 
 const getServerByID = `-- name: GetServerByID :one
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       idc,
-       svr_ip,
-       ak,
-       sk,
-       svr_status
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  idc,
+  svr_ip,
+  ak,
+  sk,
+  svr_status
 FROM server
 WHERE id = ?
 LIMIT 1
@@ -83,14 +84,15 @@ func (q *Queries) GetServerByID(ctx context.Context, id int64) (Server, error) {
 }
 
 const listServers = `-- name: ListServers :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       idc,
-       svr_ip,
-       ak,
-       sk,
-       svr_status
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  idc,
+  svr_ip,
+  ak,
+  sk,
+  svr_status
 FROM server
 ORDER BY id DESC
 LIMIT ? OFFSET ?
@@ -134,14 +136,15 @@ func (q *Queries) ListServers(ctx context.Context, arg ListServersParams) ([]Ser
 }
 
 const searchServersByIDC = `-- name: SearchServersByIDC :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       idc,
-       svr_ip,
-       ak,
-       sk,
-       svr_status
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  idc,
+  svr_ip,
+  ak,
+  sk,
+  svr_status
 FROM server
 WHERE idc = ?
 ORDER BY id DESC
@@ -187,14 +190,15 @@ func (q *Queries) SearchServersByIDC(ctx context.Context, arg SearchServersByIDC
 }
 
 const searchServersByIDCAndSvrIP = `-- name: SearchServersByIDCAndSvrIP :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       idc,
-       svr_ip,
-       ak,
-       sk,
-       svr_status
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  idc,
+  svr_ip,
+  ak,
+  sk,
+  svr_status
 FROM server
 WHERE idc like ?
   AND svr_ip like ?
@@ -247,14 +251,15 @@ func (q *Queries) SearchServersByIDCAndSvrIP(ctx context.Context, arg SearchServ
 }
 
 const searchServersBySvrIP = `-- name: SearchServersBySvrIP :many
-SELECT id,
-       gmt_create,
-       gmt_modified,
-       idc,
-       svr_ip,
-       ak,
-       sk,
-       svr_status
+SELECT
+  id,
+  gmt_create,
+  gmt_modified,
+  idc,
+  svr_ip,
+  ak,
+  sk,
+  svr_status
 FROM server
 WHERE svr_ip like ?
 ORDER BY id DESC

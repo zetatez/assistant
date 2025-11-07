@@ -89,15 +89,15 @@ func (q *Queries) DeleteTaskInstancesByParent(ctx context.Context, parentInstanc
 
 const getChildTaskInstances = `-- name: GetChildTaskInstances :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE parent_instance_id = ?
 ORDER BY ord ASC
@@ -138,15 +138,15 @@ func (q *Queries) GetChildTaskInstances(ctx context.Context, parentInstanceID sq
 
 const getRootTaskInstances = `-- name: GetRootTaskInstances :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE parent_instance_id IS NULL
 ORDER BY id DESC
@@ -193,15 +193,15 @@ func (q *Queries) GetRootTaskInstances(ctx context.Context, arg GetRootTaskInsta
 
 const getTaskInstance = `-- name: GetTaskInstance :one
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE id = ?
 LIMIT 1
@@ -335,15 +335,15 @@ func (q *Queries) GetTaskInstanceTree(ctx context.Context, id int64) ([]GetTaskI
 
 const listTaskInstances = `-- name: ListTaskInstances :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 ORDER BY ID DESC
 LIMIT ? OFFSET ?
@@ -389,15 +389,15 @@ func (q *Queries) ListTaskInstances(ctx context.Context, arg ListTaskInstancesPa
 
 const listTaskInstancesByStatus = `-- name: ListTaskInstancesByStatus :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE status = ?
 ORDER BY gmt_create DESC
@@ -445,15 +445,15 @@ func (q *Queries) ListTaskInstancesByStatus(ctx context.Context, arg ListTaskIns
 
 const listTaskInstancesByTaskDefID = `-- name: ListTaskInstancesByTaskDefID :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE task_def_id = ?
 ORDER BY gmt_create DESC
@@ -494,15 +494,15 @@ func (q *Queries) ListTaskInstancesByTaskDefID(ctx context.Context, taskDefID in
 
 const lockPendingInstances = `-- name: LockPendingInstances :many
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE status = 'PENDING'
 ORDER BY id DESC
@@ -545,15 +545,15 @@ func (q *Queries) LockPendingInstances(ctx context.Context, limit int32) ([]Task
 
 const lockTaskInstanceForUpdate = `-- name: LockTaskInstanceForUpdate :one
 SELECT
-id,
-gmt_create,
-gmt_modified,
-task_def_id,
-parent_instance_id,
-ord,
-status,
-result,
-err_msg
+  id,
+  gmt_create,
+  gmt_modified,
+  task_def_id,
+  parent_instance_id,
+  ord,
+  status,
+  result,
+  err_msg
 FROM task_instance
 WHERE id = ?
 FOR UPDATE

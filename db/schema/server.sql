@@ -11,3 +11,4 @@ CREATE TABLE IF NOT EXISTS server (
   PRIMARY KEY (id),
   UNIQUE KEY (svr_ip)
 ) COMMENT='服务器表';
+

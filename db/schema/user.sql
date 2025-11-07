@@ -10,3 +10,4 @@ CREATE TABLE IF NOT EXISTS user (
   UNIQUE KEY (user_name),
   UNIQUE KEY (email)
 ) COMMENT='用户表'
+

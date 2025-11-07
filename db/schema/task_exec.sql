@@ -13,17 +13,3 @@ CREATE TABLE IF NOT EXISTS task_exec (
   KEY idx_ti_s (task_instance_id, status)
 ) COMMENT='任务执行记录';
 
-
--- CREATE TABLE IF NOT EXISTS task_exec (
---   id BIGINT AUTO_INCREMENT NOT NULL,
---   gmt_create TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
---   gmt_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
---   task_instance_id BIGINT NOT NULL COMMENT '任务实例ID',
---   gmt_start TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---   gmt_end TIMESTAMP DEFAULT NULL,
---   status ENUM('RUNNING','SUCCESS','FAILED') DEFAULT 'RUNNING',
---   log TEXT COMMENT '执行日志',
---   FOREIGN KEY (task_instance_id) REFERENCES task_instance(id) ON DELETE CASCADE,
---   PRIMARY KEY (id),
---   KEY idx_ti_s (task_instance_id, status)
--- ) COMMENT='任务执行记录';
