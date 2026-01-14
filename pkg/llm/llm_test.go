@@ -209,7 +209,7 @@ func TestCapabilitiesHas(t *testing.T) {
 	caps := Capabilities{
 		Supported: CapabilityChat | CapabilityStream,
 	}
-	
+
 	if !caps.Has(CapabilityChat) {
 		t.Error("should have chat capability")
 	}
