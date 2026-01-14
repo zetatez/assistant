@@ -1,10 +1,6 @@
 package deepseek
 
-package deepseek
-
 import (
-	"context"
-
 	"assistant/pkg/llm"
 	"assistant/pkg/llm/providers/openai"
 )

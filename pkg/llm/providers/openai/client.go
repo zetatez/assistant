@@ -34,7 +34,6 @@ func (c *Client) Model() string { return c.model }
 func (c *Client) Capabilities() llm.Capabilities {
 	return llm.Capabilities{
 		Supported: llm.CapabilityChat |
-			llm.CapabilityStream |
 			llm.CapabilityFunctionCall,
 	}
 }
@@ -79,6 +78,5 @@ func (c *Client) Chat(ctx context.Context, req llm.ChatRequest) (*llm.ChatRespon
 }
 
 func (c *Client) StreamChat(ctx context.Context, req llm.ChatRequest, cb llm.StreamCallback) error {
-	// 这里用 SSE，逻辑略
-	return nil
+	return llm.ErrNotImplemented
 }

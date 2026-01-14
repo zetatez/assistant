@@ -40,7 +40,7 @@ func (c *Client) Model() string { return c.endpointID }
 
 func (c *Client) Capabilities() llm.Capabilities {
 	return llm.Capabilities{
-		Supported: llm.CapabilityChat | llm.CapabilityStream,
+		Supported: llm.CapabilityChat,
 	}
 }
 

@@ -44,10 +44,6 @@ func (c *Client) Capabilities() llm.Capabilities {
 	}
 }
 
-func (c *Client) StreamChat(...) error {
-	return llm.ErrNotImplemented
-}
-
 func (c *Client) Chat(ctx context.Context, req llm.ChatRequest) (*llm.ChatResponse, error) {
 	payload := map[string]any{
 		"model": c.model,

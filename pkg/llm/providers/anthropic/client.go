@@ -30,6 +30,12 @@ func New(cfg llm.Config) (llm.Client, error) {
 func (c *Client) Provider() string { return "anthropic" }
 func (c *Client) Model() string    { return c.model }
 
+func (c *Client) Capabilities() llm.Capabilities {
+	return llm.Capabilities{
+		Supported: llm.CapabilityChat,
+	}
+}
+
 func (c *Client) Chat(ctx context.Context, req llm.ChatRequest) (*llm.ChatResponse, error) {
 	// Anthropic 把 system 单独拎出来
 	var system string
