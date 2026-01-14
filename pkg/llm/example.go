@@ -1,11 +1,6 @@
 package llm
 
-import (
-	"context"
-	"fmt"
-	"log"
-	"os"
-)
+// 非流式
 
 // func main() {
 // 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -31,29 +26,31 @@ import (
 // 	fmt.Println(resp.Choices[0].Message.Content)
 // }
 
-func main() {
-	ctx := context.Background()
+// 流式
 
-	client := openai.New(openai.Config{
-		APIKey: os.Getenv("OPENAI_API_KEY"),
-		Model:  "gpt-4o-mini",
-	})
-
-	req := llm.ChatRequest{
-		Messages: []llm.Message{
-			{Role: "user", Content: "逐步推理：如何实现一个 Go LRU 缓存？"},
-		},
-	}
-
-	_, err := llm.Chat(
-		ctx,
-		client,
-		req,
-		func(delta llm.StreamDelta) {
-			fmt.Print(delta.Content)
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
+// func main() {
+// 	ctx := context.Background()
+//
+// 	client := openai.New(openai.Config{
+// 		APIKey: os.Getenv("OPENAI_API_KEY"),
+// 		Model:  "gpt-4o-mini",
+// 	})
+//
+// 	req := llm.ChatRequest{
+// 		Messages: []llm.Message{
+// 			{Role: "user", Content: "逐步推理：如何实现一个 Go LRU 缓存？"},
+// 		},
+// 	}
+//
+// 	_, err := llm.Chat(
+// 		ctx,
+// 		client,
+// 		req,
+// 		func(delta llm.StreamDelta) {
+// 			fmt.Print(delta.Content)
+// 		},
+// 	)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// }
