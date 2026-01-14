@@ -9,7 +9,8 @@ func init() {
 	llm.Register("deepseek", New)
 }
 
-// DeepSeek 直接复用 OpenAI Client
+// New creates a DeepSeek client that reuses the OpenAI-compatible client.
+// DeepSeek's API is compatible with the OpenAI API format.
 func New(cfg llm.Config) (llm.Client, error) {
 	if cfg.BaseURL == "" {
 		cfg.BaseURL = "https://api.deepseek.com"
