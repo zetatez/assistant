@@ -32,13 +32,13 @@ func (c *Client) Provider() string { return "openai" }
 func (c *Client) Model() string { return c.model }
 
 func (c *Client) Capabilities() llm.Capabilities {
-	return llm.Capabilities{
-		Supported: llm.CapabilityChat |
-			llm.CapabilityFunctionCall,
-	}
+	return llm.Capabilities{Supported: llm.CapabilityChat | llm.CapabilityFunctionCall}
 }
 
-func (c *Client) Chat(ctx context.Context, req llm.ChatRequest) (*llm.ChatResponse, error) {
+func (c *Client) Chat(
+	ctx context.Context,
+	req llm.ChatRequest,
+) (*llm.ChatResponse, error) {
 	payload := map[string]any{
 		"model":       c.model,
 		"messages":    req.Messages,
@@ -77,6 +77,10 @@ func (c *Client) Chat(ctx context.Context, req llm.ChatRequest) (*llm.ChatRespon
 	}, nil
 }
 
-func (c *Client) StreamChat(ctx context.Context, req llm.ChatRequest, cb llm.StreamCallback) error {
+func (c *Client) StreamChat(
+	ctx context.Context,
+	req llm.ChatRequest,
+	cb llm.StreamCallback,
+) error {
 	return llm.ErrNotImplemented
 }

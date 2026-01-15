@@ -8,6 +8,8 @@ import (
 	"os"
 
 	"assistant/pkg/llm"
+
+	_ "assistant/pkg/llm/providers/deepseek"
 )
 
 func main() {
@@ -37,7 +39,7 @@ func main() {
 	req := llm.ChatRequest{
 		Model: cfg.Model,
 		Messages: []llm.Message{
-			{Role: llm.RoleUser, Content: "Hello, can you explain quantum computing in one sentence?"},
+			{Role: llm.RoleUser, Content: "帮我介绍量子计算机原理，使用一句话"},
 		},
 		Temperature: 0.7,
 		MaxTokens:   100,
@@ -69,7 +71,7 @@ func main() {
 		streamReq := llm.ChatRequest{
 			Model: cfg.Model,
 			Messages: []llm.Message{
-				{Role: llm.RoleUser, Content: "What is 2+2? Answer in one word."},
+				{Role: llm.RoleUser, Content: "帮我介绍量子计算机原理, 使用三句话"},
 			},
 			Temperature: 0.7,
 			MaxTokens:   20,
