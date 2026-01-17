@@ -3,7 +3,6 @@ package todo_list
 import (
 	"assistant/internal/app/repo"
 	"assistant/pkg/response"
-	"database/sql"
 	"net/http"
 	"strconv"
 
@@ -267,11 +266,11 @@ func (h *TodoListHandler) UpdateTodoListByID(c *gin.Context) {
 		return
 	}
 	var req repo.UpdateTodoListByIDParams
-	req.ID = sql.NullInt64{Int64: id, Valid: true}
 	if err := c.BindJSON(&req); err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
+	req.ID = id
 	data, err := h.svc.UpdateTodoListByID(c, req)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())

@@ -1,9 +1,15 @@
 package retry
 
+import (
+	"context"
+	"log"
+	"sync"
+)
+
 type AsyncTask[T any] struct {
-	Fn   func() (T, error)
-	Config  Config
-	Done chan Result[T]
+	Fn     func() (T, error)
+	Config Config
+	Done   chan Result[T]
 }
 
 type Result[T any] struct {
@@ -29,7 +35,7 @@ func NewRetryAsyncRunner(buffer int, logger *log.Logger) *RetryAsyncRunner {
 	}
 }
 
-func (r *RetryAsyncRunner) Submit[T any](task AsyncTask[T]) {
+func (r *RetryAsyncRunner) Submit(task AsyncTask[any]) {
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()

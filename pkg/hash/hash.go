@@ -10,9 +10,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// HashPassword 使用 bcrypt 哈希密码(推荐用于用户登录密码)
+const DefaultBCryptCost = 12 // reasonable range: 10-14; tune for your machine/load.
+
+// HashPassword hashes a password with bcrypt (recommended for login passwords).
 func HashPassword(plain string) (string, error) {
-	const cost = 12 // 10-14 合理值，根据你的机器/负载调整
+	return HashPasswordWithCost(plain, DefaultBCryptCost)
+}
+
+// HashPasswordWithCost hashes a password with bcrypt using the given cost.
+func HashPasswordWithCost(plain string, cost int) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(plain), cost)
 	if err != nil {
 		return "", err
@@ -20,32 +26,27 @@ func HashPassword(plain string) (string, error) {
 	return string(hash), nil
 }
 
-// CheckPasswordHash 比较明文密码与存储的 hash
+// CheckPasswordHash compares a plaintext password with a stored bcrypt hash.
 func CheckPasswordHash(hash, plain string) error {
-	// bcrypt.CompareFromPassword 在成功时返回 nil
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(plain))
 }
 
-func Sha1(input string) string {
-	h := sha1.New()
-	h.Write([]byte(input))
-	return hex.EncodeToString(h.Sum(nil))
+func SHA1(input []byte) string {
+	sum := sha1.Sum(input)
+	return hex.EncodeToString(sum[:])
 }
 
-func Sha256(input string) string {
-	h := sha256.New()
-	h.Write([]byte(input))
-	return hex.EncodeToString(h.Sum(nil))
+func SHA256(input []byte) string {
+	sum := sha256.Sum256(input)
+	return hex.EncodeToString(sum[:])
 }
 
-func Sha512(input string) string {
-	h := sha512.New()
-	h.Write([]byte(input))
-	return hex.EncodeToString(h.Sum(nil))
+func SHA512(input []byte) string {
+	sum := sha512.Sum512(input)
+	return hex.EncodeToString(sum[:])
 }
 
-func MD5(input string) string {
-	h := md5.New()
-	h.Write([]byte(input))
-	return hex.EncodeToString(h.Sum(nil))
+func MD5(input []byte) string {
+	sum := md5.Sum(input)
+	return hex.EncodeToString(sum[:])
 }

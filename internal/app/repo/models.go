@@ -854,7 +854,7 @@ func (ns NullTodoListTaskStatus) Value() (driver.Value, error) {
 }
 
 // 服务器表
-type Server struct {
+type SysServer struct {
 	ID          int64     `json:"id"`
 	GmtCreate   time.Time `json:"gmt_create"`
 	GmtModified time.Time `json:"gmt_modified"`
@@ -863,6 +863,16 @@ type Server struct {
 	AK          string    `json:"ak"`
 	SK          string    `json:"sk"`
 	SvrStatus   string    `json:"svr_status"`
+}
+
+// 用户表
+type SysUser struct {
+	ID          int64     `json:"id"`
+	GmtCreate   time.Time `json:"gmt_create"`
+	GmtModified time.Time `json:"gmt_modified"`
+	UserName    string    `json:"user_name"`
+	Password    string    `json:"password"`
+	Email       string    `json:"email"`
 }
 
 // 原子任务定义表
@@ -1163,14 +1173,4 @@ type TodoList struct {
 	Priority int32 `json:"priority"`
 	// 任务状态
 	TaskStatus TodoListTaskStatus `json:"task_status"`
-}
-
-// 用户表
-type User struct {
-	ID          int64     `json:"id"`
-	GmtCreate   time.Time `json:"gmt_create"`
-	GmtModified time.Time `json:"gmt_modified"`
-	UserName    string    `json:"user_name"`
-	Password    string    `json:"password"`
-	Email       string    `json:"email"`
 }

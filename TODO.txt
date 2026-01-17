@@ -1,0 +1,25 @@
+OpenCode low-level commands checklist
+
+Implemented (pkg/utils)
+- apply_patch: pkg/utils/fs_patch.go (ApplyPatch, ApplyPatchInDir, ApplyPatchContext)
+- fs_read: pkg/utils/fs_read.go (Read, ReadLines, ReadChunk)
+- fs_write: pkg/utils/fs_write.go (Write: overwrite|append|create)
+- fs_find: pkg/utils/fs_find.go (FindNew + options + Exec)
+- fs_grep: pkg/utils/fs_grep.go (GrepNew + options + Exec)
+- fs_list_dir: pkg/utils/fs_list_dir.go (ListDir)
+- exec: pkg/utils/exec.go (ExecCommand, ExecShell, Exec)
+- script: pkg/utils/script.go (RunScript, RunScriptWithTimeout)
+- git: pkg/utils/git.go (status/diff/add/commit/branch/upstream/ahead-behind)
+- notify: pkg/utils/notify.go (Notify, NotifyE, NotifyWithOptions)
+- system_audio: pkg/utils/system_audio.go (Volume, Mute, Unmute)
+- system_power: pkg/utils/system_power.go (Shutdown, Reboot, Suspend, Lock)
+- dir/fs helpers: pkg/utils/dir.go, pkg/utils/fs.go
+
+Potential gaps (not currently present as a dedicated command)
+- fs_glob: pkg/utils/fs_glob.go (GlobNew + options + Exec)
+- fs_stat: pkg/utils/fs_stat.go (Stat, StatInDir)
+- fs_move/rename: pkg/utils/fs_move.go (MoveNew + options + Exec)
+- fs_remove: pkg/utils/fs_remove.go (RemoveNew + options + Exec)
+
+Known TODOs outside low-level commands
+- internal/app/modules/health/service.go: Health() has a TODO placeholder

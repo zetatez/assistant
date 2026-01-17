@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"assistant/internal/app/repo"
-	"assistant/internal/db"
+	"assistant/internal/bootstrap/psl"
 )
 
 type TodoListService struct {
@@ -14,7 +14,7 @@ type TodoListService struct {
 
 func NewTodoListService() *TodoListService {
 	return &TodoListService{
-		q: repo.New(db.GetDB()),
+		q: repo.New(psl.GetDB()),
 	}
 }
 
@@ -28,12 +28,12 @@ func (s *TodoListService) CreateTodoList(ctx context.Context, arg repo.CreateTod
 }
 
 func (s *TodoListService) DeleteTodoListByID(ctx context.Context, id int64) error {
-	_, err := s.q.DeleteTodoListByID(ctx, sql.NullInt64{Int64: id, Valid: true})
+	_, err := s.q.DeleteTodoListByID(ctx, id)
 	return err
 }
 
 func (s *TodoListService) GetTodoListByID(ctx context.Context, id int64) (repo.TodoList, error) {
-	return s.q.GetTodoListByID(ctx, sql.NullInt64{Int64: id, Valid: true})
+	return s.q.GetTodoListByID(ctx, id)
 }
 
 func (s *TodoListService) ListTodoLists(ctx context.Context, arg repo.ListTodoListsParams) ([]repo.TodoList, error) {
@@ -61,20 +61,24 @@ func (s *TodoListService) UpdateTodoListByID(ctx context.Context, arg repo.Updat
 }
 
 func (s *TodoListService) UpdateTodoListProgressByID(ctx context.Context, id int64, progress int64) error {
+	progress32 := int32(progress)
 	_, err := s.q.UpdateTodoListProgressByID(ctx, repo.UpdateTodoListProgressByIDParams{
-		Progress:   progress,
-		Progress_2: progress,
-		ID:         sql.NullInt64{Int64: id, Valid: true},
+		Progress: progress32,
+		Column2:  progress32,
+		ID:       id,
 	})
 	return err
 }
 
 func (s *TodoListService) CompleteTodoListByID(ctx context.Context, id int64) error {
-	_, err := s.q.CompleteTodoListByID(ctx, sql.NullInt64{Int64: id, Valid: true})
+	_, err := s.q.CompleteTodoListByID(ctx, id)
 	return err
 }
 
 func (s *TodoListService) UpdateTodoListPriorityByID(ctx context.Context, id int64, priority int64) error {
-	_, err := s.q.UpdateTodoListPriorityByID(ctx, sql.NullInt64{Int64: id, Valid: true}, priority)
+	_, err := s.q.UpdateTodoListPriorityByID(ctx, repo.UpdateTodoListPriorityByIDParams{
+		Priority: int32(priority),
+		ID:       id,
+	})
 	return err
 }

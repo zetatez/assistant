@@ -4,10 +4,9 @@ import (
 	_ "assistant/docs"
 	"assistant/internal/app/module"
 	"assistant/internal/app/modules/health"
+	"assistant/internal/app/modules/sys_user"
 	"assistant/internal/app/modules/task_orchestration"
-	"assistant/internal/app/modules/user"
-	"assistant/internal/cfg"
-	"assistant/internal/log"
+	"assistant/internal/bootstrap/psl"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -16,23 +15,25 @@ import (
 )
 
 func Run() {
+	logger := psl.GetLogger()
+
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
 	modules := []module.Module{
 		health.NewHealthModule(),
-		user.NewUserModule(),
+		sys_user.NewSysUserModule(),
 		task_orchestration.NewTaskOrchestrationModule(),
 	}
 
 	for _, m := range modules {
-		log.Logger.Printf("✅ - register module %s", m.Name())
+		logger.Printf("register module %s", m.Name())
 		m.Register(r)
 	}
 
-	log.Logger.Infof("✅ swag on: http://127.0.0.1:%d/swagger/index.html", cfg.C.App.Port)
+	logger.Infof("swag on: http://127.0.0.1:%d/swagger/index.html", psl.GetConfig().App.Port)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	log.Logger.Infof("✅ Server running at :%d", cfg.C.App.Port)
-	r.Run(fmt.Sprintf(":%d", cfg.C.App.Port))
+	logger.Infof("server running at :%d", psl.GetConfig().App.Port)
+	r.Run(fmt.Sprintf(":%d", psl.GetConfig().App.Port))
 }

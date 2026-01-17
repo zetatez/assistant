@@ -3,7 +3,7 @@ package task_orchestration
 import (
 	"assistant/internal/app/module"
 	"assistant/internal/app/repo"
-	"assistant/internal/db"
+	"assistant/internal/bootstrap/psl"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,9 +16,9 @@ type TaskOrchestrationModule struct {
 
 func NewTaskOrchestrationModule() module.Module {
 	return &TaskOrchestrationModule{
-		taskAtomicSvc: NewTaskAtomicService(repo.New(db.GetDB())),
-		workflowSvc:   NewWorkflowService(repo.New(db.GetDB())),
-		scheduleSvc:   NewScheduleService(repo.New(db.GetDB())),
+		taskAtomicSvc: NewTaskAtomicService(repo.New(psl.GetDB())),
+		workflowSvc:   NewWorkflowService(repo.New(psl.GetDB())),
+		scheduleSvc:   NewScheduleService(repo.New(psl.GetDB())),
 	}
 }
 

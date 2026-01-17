@@ -338,6 +338,351 @@ const docTemplate = `{
                 }
             }
         },
+        "/sys_user/count": {
+            "get": {
+                "description": "获取系统中所有用户的数量",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "统计用户数量",
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/sys_user/create": {
+            "post": {
+                "description": "创建一个新的用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "创建用户",
+                "parameters": [
+                    {
+                        "description": "用户创建参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/assistant_internal_app_repo.CreateSysUserParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/sys_user/delete/{id}": {
+            "delete": {
+                "description": "根据用户ID删除用户",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "删除用户",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/sys_user/get/{id}": {
+            "get": {
+                "description": "根据用户ID获取用户信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "获取用户详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/sys_user/list": {
+            "get": {
+                "description": "支持分页、排序的用户列表查询",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "获取用户列表",
+                "parameters": [
+                    {
+                        "description": "用户列表参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/assistant_internal_app_repo.ListSysUsersParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/sys_user/search_by_email": {
+            "post": {
+                "description": "根据邮箱地址模糊搜索用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "通过邮箱搜索用户",
+                "parameters": [
+                    {
+                        "description": "搜索参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/assistant_internal_app_repo.SearchSysUsersByEmailParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/sys_user/search_by_user_name": {
+            "post": {
+                "description": "根据用户名模糊搜索用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "通过用户名搜索用户",
+                "parameters": [
+                    {
+                        "description": "搜索参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/assistant_internal_app_repo.SearchSysUsersByUserNameParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/sys_user/update/{id}": {
+            "put": {
+                "description": "根据用户ID更新用户信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "更新用户信息",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "用户更新参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/assistant_internal_app_repo.UpdateSysUserByIDParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/assistant_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/task_atomic/count": {
             "get": {
                 "description": "统计系统中所有启用的原子任务数量",
@@ -1176,351 +1521,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/count": {
-            "get": {
-                "description": "获取系统中所有用户的数量",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "用户管理"
-                ],
-                "summary": "统计用户数量",
-                "responses": {
-                    "200": {
-                        "description": "成功",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/create": {
-            "post": {
-                "description": "创建一个新的用户",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "用户管理"
-                ],
-                "summary": "创建用户",
-                "parameters": [
-                    {
-                        "description": "用户创建参数",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/assistant_internal_app_repo.CreateUserParams"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/delete/{id}": {
-            "delete": {
-                "description": "根据用户ID删除用户",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "用户管理"
-                ],
-                "summary": "删除用户",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "用户ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/get/{id}": {
-            "get": {
-                "description": "根据用户ID获取用户信息",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "用户管理"
-                ],
-                "summary": "获取用户详情",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "用户ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/list": {
-            "get": {
-                "description": "支持分页、排序的用户列表查询",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "用户管理"
-                ],
-                "summary": "获取用户列表",
-                "parameters": [
-                    {
-                        "description": "用户列表参数",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/assistant_internal_app_repo.ListUsersParams"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/search_by_email": {
-            "post": {
-                "description": "根据邮箱地址模糊搜索用户",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "用户管理"
-                ],
-                "summary": "通过邮箱搜索用户",
-                "parameters": [
-                    {
-                        "description": "搜索参数",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/assistant_internal_app_repo.SearchUsersByEmailParams"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/search_by_user_name": {
-            "post": {
-                "description": "根据用户名模糊搜索用户",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "用户管理"
-                ],
-                "summary": "通过用户名搜索用户",
-                "parameters": [
-                    {
-                        "description": "搜索参数",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/assistant_internal_app_repo.SearchUsersByUserNameParams"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/update/{id}": {
-            "put": {
-                "description": "根据用户ID更新用户信息",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "用户管理"
-                ],
-                "summary": "更新用户信息",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "用户ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "用户更新参数",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/assistant_internal_app_repo.UpdateUserByIDParams"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/assistant_pkg_response.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/workflow/cancel/{id}": {
             "post": {
                 "description": "取消正在运行或暂停的工作流实例",
@@ -2245,6 +2245,20 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "assistant_internal_app_repo.CreateSysUserParams": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                }
+            }
+        },
         "assistant_internal_app_repo.CreateTodoListParams": {
             "type": "object",
             "properties": {
@@ -2259,17 +2273,14 @@ const docTemplate = `{
                 }
             }
         },
-        "assistant_internal_app_repo.CreateUserParams": {
+        "assistant_internal_app_repo.ListSysUsersParams": {
             "type": "object",
             "properties": {
-                "email": {
-                    "type": "string"
+                "limit": {
+                    "type": "integer"
                 },
-                "password": {
-                    "type": "string"
-                },
-                "user_name": {
-                    "type": "string"
+                "offset": {
+                    "type": "integer"
                 }
             }
         },
@@ -2284,7 +2295,21 @@ const docTemplate = `{
                 }
             }
         },
-        "assistant_internal_app_repo.ListUsersParams": {
+        "assistant_internal_app_repo.SearchSysUsersByEmailParams": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                }
+            }
+        },
+        "assistant_internal_app_repo.SearchSysUsersByUserNameParams": {
             "type": "object",
             "properties": {
                 "limit": {
@@ -2292,6 +2317,9 @@ const docTemplate = `{
                 },
                 "offset": {
                     "type": "integer"
+                },
+                "user_name": {
+                    "type": "string"
                 }
             }
         },
@@ -2354,34 +2382,6 @@ const docTemplate = `{
                 }
             }
         },
-        "assistant_internal_app_repo.SearchUsersByEmailParams": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "offset": {
-                    "type": "integer"
-                }
-            }
-        },
-        "assistant_internal_app_repo.SearchUsersByUserNameParams": {
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer"
-                },
-                "offset": {
-                    "type": "integer"
-                },
-                "user_name": {
-                    "type": "string"
-                }
-            }
-        },
         "assistant_internal_app_repo.TodoListTaskStatus": {
             "type": "string",
             "enum": [
@@ -2394,6 +2394,23 @@ const docTemplate = `{
                 "TodoListTaskStatusINPROGRESS",
                 "TodoListTaskStatusCOMPLETED"
             ]
+        },
+        "assistant_internal_app_repo.UpdateSysUserByIDParams": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                }
+            }
         },
         "assistant_internal_app_repo.UpdateTodoListByIDParams": {
             "type": "object",
@@ -2417,23 +2434,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/assistant_internal_app_repo.TodoListTaskStatus"
                 },
                 "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "assistant_internal_app_repo.UpdateUserByIDParams": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "user_name": {
                     "type": "string"
                 }
             }

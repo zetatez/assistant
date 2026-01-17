@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
 	"assistant/pkg/llm"
 )
@@ -14,6 +16,7 @@ type Client struct {
 	apiKey  string
 	baseURL string
 	model   string
+	client  *llm.BaseClient
 }
 
 func init() {
@@ -22,7 +25,7 @@ func init() {
 
 func New(cfg llm.Config) (llm.Client, error) {
 	if cfg.APIKey == "" {
-		return nil, fmt.Errorf("deepseek: API key is required")
+		return nil, llm.ErrInvalidConfig
 	}
 
 	baseURL := cfg.BaseURL
@@ -39,6 +42,7 @@ func New(cfg llm.Config) (llm.Client, error) {
 		apiKey:  cfg.APIKey,
 		baseURL: baseURL,
 		model:   model,
+		client:  llm.NewBaseClient(baseURL, cfg),
 	}, nil
 }
 
@@ -47,49 +51,30 @@ func (c *Client) Provider() string { return "deepseek" }
 func (c *Client) Model() string { return c.model }
 
 func (c *Client) Capabilities() llm.Capabilities {
-	return llm.Capabilities{
-		Supported: llm.CapabilityChat,
-	}
+	return llm.Capabilities{Supported: llm.CapabilityChat | llm.CapabilityStream}
 }
 
-func (c *Client) Chat(
-	ctx context.Context,
-	req llm.ChatRequest,
-) (*llm.ChatResponse, error) {
+func (c *Client) Chat(ctx context.Context, req llm.ChatRequest) (*llm.ChatResponse, error) {
 	payload := map[string]any{
-		"model":       c.model,
+		"model":       c.getModel(req.Model),
 		"messages":    req.Messages,
 		"temperature": req.Temperature,
-		"max_tokens":  req.MaxTokens,
 	}
 
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
+	if req.MaxTokens > 0 {
+		payload["max_tokens"] = req.MaxTokens
 	}
 
-	httpReq, err := http.NewRequestWithContext(
-		ctx,
-		"POST",
-		c.baseURL+"/v1/chat/completions",
-		bytes.NewReader(body),
-	)
-	if err != nil {
-		return nil, err
+	headers := map[string]string{
+		"Authorization": "Bearer " + c.apiKey,
+		"Content-Type":  "application/json",
 	}
 
-	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(httpReq)
+	resp, err := c.client.Do(ctx, "POST", "/v1/chat/completions", payload, headers)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("deepseek: http %d", resp.StatusCode)
-	}
 
 	var raw struct {
 		Choices []struct {
@@ -103,19 +88,111 @@ func (c *Client) Chat(
 	}
 
 	if len(raw.Choices) == 0 {
-		return nil, fmt.Errorf("deepseek: empty response")
+		return nil, llm.ErrMaxRetries
 	}
 
 	return &llm.ChatResponse{
 		Content: raw.Choices[0].Message.Content,
+		Role:    raw.Choices[0].Message.Role,
 		Usage:   raw.Usage,
 	}, nil
 }
 
-func (c *Client) StreamChat(
-	ctx context.Context,
-	req llm.ChatRequest,
-	cb llm.StreamCallback,
-) error {
-	return llm.ErrNotImplemented
+func (c *Client) StreamChat(ctx context.Context, req llm.ChatRequest, cb llm.StreamCallback) error {
+	payload := map[string]any{
+		"model":       c.getModel(req.Model),
+		"messages":    req.Messages,
+		"temperature": req.Temperature,
+		"stream":      true,
+	}
+	if req.MaxTokens > 0 {
+		payload["max_tokens"] = req.MaxTokens
+	}
+	if req.TopP > 0 {
+		payload["top_p"] = req.TopP
+	}
+	if len(req.Tools) > 0 {
+		payload["tools"] = req.Tools
+	}
+
+	headers := map[string]string{
+		"Authorization": "Bearer " + c.apiKey,
+		"Content-Type":  "application/json",
+		"Accept":        "text/event-stream",
+	}
+
+	reqBody, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/v1/chat/completions", bytes.NewReader(reqBody))
+	if err != nil {
+		return err
+	}
+	for k, v := range headers {
+		httpReq.Header.Set(k, v)
+	}
+
+	resp, err := c.client.HTTPClient().Do(httpReq)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		return &llm.HTTPError{Code: resp.StatusCode, Message: strings.TrimSpace(string(b))}
+	}
+
+	err = llm.ReadSSE(ctx, resp.Body, func(data string) error {
+		if data == "[DONE]" {
+			return io.EOF
+		}
+
+		var raw struct {
+			Choices []struct {
+				Delta struct {
+					Content   string         `json:"content"`
+					Role      llm.Role       `json:"role"`
+					ToolCalls []llm.ToolCall `json:"tool_calls"`
+				} `json:"delta"`
+				FinishReason *string `json:"finish_reason"`
+			} `json:"choices"`
+			Usage llm.TokenUsage `json:"usage"`
+			Error any            `json:"error"`
+		}
+		if err := json.Unmarshal([]byte(data), &raw); err != nil {
+			return err
+		}
+		if len(raw.Choices) == 0 {
+			return nil
+		}
+
+		cb(llm.ChatResponse{
+			Content:   raw.Choices[0].Delta.Content,
+			Role:      raw.Choices[0].Delta.Role,
+			ToolCalls: raw.Choices[0].Delta.ToolCalls,
+			Usage:     raw.Usage,
+		})
+
+		if raw.Choices[0].FinishReason != nil && *raw.Choices[0].FinishReason != "" {
+			return io.EOF
+		}
+		return nil
+	})
+	if err != nil {
+		if err == io.EOF {
+			return nil
+		}
+		return fmt.Errorf("deepseek stream: %w", err)
+	}
+	return nil
+}
+
+func (c *Client) getModel(model string) string {
+	if model != "" {
+		return model
+	}
+	return c.model
 }

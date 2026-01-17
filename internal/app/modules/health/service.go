@@ -2,7 +2,7 @@ package health
 
 import (
 	"assistant/internal/app/repo"
-	"assistant/internal/db"
+	"assistant/internal/bootstrap/psl"
 )
 
 type HealthService struct {
@@ -11,7 +11,7 @@ type HealthService struct {
 
 func NewHealthService() *HealthService {
 	return &HealthService{
-		q: repo.New(db.GetDB()),
+		q: repo.New(psl.GetDB()),
 	}
 }
 

@@ -1,5 +1,14 @@
 basePath: /
 definitions:
+  assistant_internal_app_repo.CreateSysUserParams:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      user_name:
+        type: string
+    type: object
   assistant_internal_app_repo.CreateTodoListParams:
     properties:
       content:
@@ -9,14 +18,12 @@ definitions:
       title:
         type: string
     type: object
-  assistant_internal_app_repo.CreateUserParams:
+  assistant_internal_app_repo.ListSysUsersParams:
     properties:
-      email:
-        type: string
-      password:
-        type: string
-      user_name:
-        type: string
+      limit:
+        type: integer
+      offset:
+        type: integer
     type: object
   assistant_internal_app_repo.ListTodoListsParams:
     properties:
@@ -25,12 +32,23 @@ definitions:
       offset:
         type: integer
     type: object
-  assistant_internal_app_repo.ListUsersParams:
+  assistant_internal_app_repo.SearchSysUsersByEmailParams:
+    properties:
+      email:
+        type: string
+      limit:
+        type: integer
+      offset:
+        type: integer
+    type: object
+  assistant_internal_app_repo.SearchSysUsersByUserNameParams:
     properties:
       limit:
         type: integer
       offset:
         type: integer
+      user_name:
+        type: string
     type: object
   assistant_internal_app_repo.SearchTodoListsByContentParams:
     properties:
@@ -70,24 +88,6 @@ definitions:
       title:
         type: string
     type: object
-  assistant_internal_app_repo.SearchUsersByEmailParams:
-    properties:
-      email:
-        type: string
-      limit:
-        type: integer
-      offset:
-        type: integer
-    type: object
-  assistant_internal_app_repo.SearchUsersByUserNameParams:
-    properties:
-      limit:
-        type: integer
-      offset:
-        type: integer
-      user_name:
-        type: string
-    type: object
   assistant_internal_app_repo.TodoListTaskStatus:
     enum:
     - PENDING
@@ -98,6 +98,17 @@ definitions:
     - TodoListTaskStatusPENDING
     - TodoListTaskStatusINPROGRESS
     - TodoListTaskStatusCOMPLETED
+  assistant_internal_app_repo.UpdateSysUserByIDParams:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      password:
+        type: string
+      user_name:
+        type: string
+    type: object
   assistant_internal_app_repo.UpdateTodoListByIDParams:
     properties:
       content:
@@ -113,17 +124,6 @@ definitions:
       task_status:
         $ref: '#/definitions/assistant_internal_app_repo.TodoListTaskStatus'
       title:
-        type: string
-    type: object
-  assistant_internal_app_repo.UpdateUserByIDParams:
-    properties:
-      email:
-        type: string
-      id:
-        type: integer
-      password:
-        type: string
-      user_name:
         type: string
     type: object
   assistant_pkg_response.Response:
@@ -473,6 +473,232 @@ paths:
       summary: 更新任务调度
       tags:
       - 任务调度
+  /sys_user/count:
+    get:
+      description: 获取系统中所有用户的数量
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 统计用户数量
+      tags:
+      - 用户管理
+  /sys_user/create:
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的用户
+      parameters:
+      - description: 用户创建参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.CreateSysUserParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 创建用户
+      tags:
+      - 用户管理
+  /sys_user/delete/{id}:
+    delete:
+      description: 根据用户ID删除用户
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 删除用户
+      tags:
+      - 用户管理
+  /sys_user/get/{id}:
+    get:
+      description: 根据用户ID获取用户信息
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取用户详情
+      tags:
+      - 用户管理
+  /sys_user/list:
+    get:
+      consumes:
+      - application/json
+      description: 支持分页、排序的用户列表查询
+      parameters:
+      - description: 用户列表参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.ListSysUsersParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 获取用户列表
+      tags:
+      - 用户管理
+  /sys_user/search_by_email:
+    post:
+      consumes:
+      - application/json
+      description: 根据邮箱地址模糊搜索用户
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.SearchSysUsersByEmailParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 通过邮箱搜索用户
+      tags:
+      - 用户管理
+  /sys_user/search_by_user_name:
+    post:
+      consumes:
+      - application/json
+      description: 根据用户名模糊搜索用户
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.SearchSysUsersByUserNameParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 通过用户名搜索用户
+      tags:
+      - 用户管理
+  /sys_user/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: 根据用户ID更新用户信息
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 用户更新参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/assistant_internal_app_repo.UpdateSysUserByIDParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/assistant_pkg_response.Response'
+      summary: 更新用户信息
+      tags:
+      - 用户管理
   /task_atomic/count:
     get:
       description: 统计系统中所有启用的原子任务数量
@@ -1024,232 +1250,6 @@ paths:
       summary: 更新待办事项
       tags:
       - 待办事项
-  /user/count:
-    get:
-      description: 获取系统中所有用户的数量
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-      summary: 统计用户数量
-      tags:
-      - 用户管理
-  /user/create:
-    post:
-      consumes:
-      - application/json
-      description: 创建一个新的用户
-      parameters:
-      - description: 用户创建参数
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/assistant_internal_app_repo.CreateUserParams'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-      summary: 创建用户
-      tags:
-      - 用户管理
-  /user/delete/{id}:
-    delete:
-      description: 根据用户ID删除用户
-      parameters:
-      - description: 用户ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-      summary: 删除用户
-      tags:
-      - 用户管理
-  /user/get/{id}:
-    get:
-      description: 根据用户ID获取用户信息
-      parameters:
-      - description: 用户ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-      summary: 获取用户详情
-      tags:
-      - 用户管理
-  /user/list:
-    get:
-      consumes:
-      - application/json
-      description: 支持分页、排序的用户列表查询
-      parameters:
-      - description: 用户列表参数
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/assistant_internal_app_repo.ListUsersParams'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-      summary: 获取用户列表
-      tags:
-      - 用户管理
-  /user/search_by_email:
-    post:
-      consumes:
-      - application/json
-      description: 根据邮箱地址模糊搜索用户
-      parameters:
-      - description: 搜索参数
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/assistant_internal_app_repo.SearchUsersByEmailParams'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-      summary: 通过邮箱搜索用户
-      tags:
-      - 用户管理
-  /user/search_by_user_name:
-    post:
-      consumes:
-      - application/json
-      description: 根据用户名模糊搜索用户
-      parameters:
-      - description: 搜索参数
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/assistant_internal_app_repo.SearchUsersByUserNameParams'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-      summary: 通过用户名搜索用户
-      tags:
-      - 用户管理
-  /user/update/{id}:
-    put:
-      consumes:
-      - application/json
-      description: 根据用户ID更新用户信息
-      parameters:
-      - description: 用户ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: 用户更新参数
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/assistant_internal_app_repo.UpdateUserByIDParams'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/assistant_pkg_response.Response'
-      summary: 更新用户信息
-      tags:
-      - 用户管理
   /workflow/cancel/{id}:
     post:
       description: 取消正在运行或暂停的工作流实例

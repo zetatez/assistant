@@ -10,7 +10,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-type CronMgr struct {
+type Cron struct {
 	c            *cron.Cron
 	tasks        map[string]*Task
 	mu           sync.RWMutex
@@ -18,8 +18,8 @@ type CronMgr struct {
 	logger       *log.Logger
 }
 
-func New(opts ...Option) *CronMgr {
-	m := &CronMgr{
+func NewCron(opts ...Option) *Cron {
+	m := &Cron{
 		c: cron.New(
 			cron.WithSeconds(),
 			cron.WithChain(cron.Recover(cron.DefaultLogger)),
@@ -36,10 +36,10 @@ func New(opts ...Option) *CronMgr {
 	return m
 }
 
-type Option func(*CronMgr)
+type Option func(*Cron)
 
 func WithLogger(logger *log.Logger) Option {
-	return func(m *CronMgr) {
+	return func(m *Cron) {
 		if logger != nil {
 			m.logger = logger
 		}
@@ -47,7 +47,7 @@ func WithLogger(logger *log.Logger) Option {
 }
 
 func WithMaxHistory(count int) Option {
-	return func(m *CronMgr) {
+	return func(m *Cron) {
 		if count > 0 {
 			m.maxHistCount = count
 		}
@@ -82,7 +82,7 @@ type TaskResult struct {
 	ErrorMsg  string
 }
 
-func (m *CronMgr) AddTask(name string, spec string, fn TaskFunc) error {
+func (m *Cron) AddTask(name string, spec string, fn TaskFunc) error {
 	if name == "" {
 		return fmt.Errorf("task name cannot be empty")
 	}
@@ -120,7 +120,7 @@ func (m *CronMgr) AddTask(name string, spec string, fn TaskFunc) error {
 	return nil
 }
 
-func (m *CronMgr) validateSpec(spec string) error {
+func (m *Cron) validateSpec(spec string) error {
 	_, err := cron.ParseStandard(spec)
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ func (m *CronMgr) validateSpec(spec string) error {
 	return nil
 }
 
-func (m *CronMgr) wrapTask(name string, fn TaskFunc) func() {
+func (m *Cron) wrapTask(name string, fn TaskFunc) func() {
 	return func() {
 		start := time.Now()
 		success := true
@@ -178,7 +178,7 @@ func (m *CronMgr) wrapTask(name string, fn TaskFunc) func() {
 	}
 }
 
-func (m *CronMgr) RemoveTask(name string) error {
+func (m *Cron) RemoveTask(name string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -193,7 +193,7 @@ func (m *CronMgr) RemoveTask(name string) error {
 	return nil
 }
 
-func (m *CronMgr) GetTask(name string) (*Task, error) {
+func (m *Cron) GetTask(name string) (*Task, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -204,7 +204,7 @@ func (m *CronMgr) GetTask(name string) (*Task, error) {
 	return task, nil
 }
 
-func (m *CronMgr) ListTasks() []Task {
+func (m *Cron) ListTasks() []Task {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -215,7 +215,7 @@ func (m *CronMgr) ListTasks() []Task {
 	return list
 }
 
-func (m *CronMgr) ListTaskNames() []string {
+func (m *Cron) ListTaskNames() []string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -226,7 +226,7 @@ func (m *CronMgr) ListTaskNames() []string {
 	return names
 }
 
-func (m *CronMgr) ListResults(name string) ([]TaskResult, error) {
+func (m *Cron) ListResults(name string) ([]TaskResult, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -240,7 +240,7 @@ func (m *CronMgr) ListResults(name string) ([]TaskResult, error) {
 	return hist, nil
 }
 
-func (m *CronMgr) RunTaskNow(name string) error {
+func (m *Cron) RunTaskNow(name string) error {
 	m.mu.RLock()
 	task, ok := m.tasks[name]
 	m.mu.RUnlock()
@@ -255,7 +255,7 @@ func (m *CronMgr) RunTaskNow(name string) error {
 	return nil
 }
 
-func (m *CronMgr) NextRunTime(name string) (time.Time, error) {
+func (m *Cron) NextRunTime(name string) (time.Time, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -271,18 +271,18 @@ func (m *CronMgr) NextRunTime(name string) (time.Time, error) {
 	return entry.Next, nil
 }
 
-func (m *CronMgr) TaskCount() int {
+func (m *Cron) TaskCount() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return len(m.tasks)
 }
 
-func (m *CronMgr) Start() {
+func (m *Cron) Start() {
 	m.c.Start()
 	m.logger.Println("[cron] started")
 }
 
-func (m *CronMgr) StartWithContext(ctx context.Context) {
+func (m *Cron) StartWithContext(ctx context.Context) {
 	m.c.Start()
 	go func() {
 		<-ctx.Done()
@@ -291,7 +291,7 @@ func (m *CronMgr) StartWithContext(ctx context.Context) {
 	m.logger.Println("[cron] started with context")
 }
 
-func (m *CronMgr) Stop() {
+func (m *Cron) Stop() {
 	ctx := m.c.Stop()
 	select {
 	case <-ctx.Done():
@@ -301,7 +301,7 @@ func (m *CronMgr) Stop() {
 	m.logger.Println("[cron] stopped")
 }
 
-func (m *CronMgr) StopWithTimeout(timeout time.Duration) {
+func (m *Cron) StopWithTimeout(timeout time.Duration) {
 	ctx := m.c.Stop()
 	select {
 	case <-ctx.Done():
