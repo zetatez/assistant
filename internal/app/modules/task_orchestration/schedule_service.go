@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"assistant/internal/app/repo"
+	"assistant/internal/bootstrap/psl"
 	"assistant/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -60,6 +61,8 @@ func (s *ScheduleService) Count(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /schedule/create [post]
 func (s *ScheduleService) Create(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	var req CreateScheduleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -88,11 +91,22 @@ func (s *ScheduleService) Create(c *gin.Context) {
 
 	result, err := s.q.CreateTaskSchedule(c, params)
 	if err != nil {
+		logger.WithFields(map[string]interface{}{
+			"name":            req.Name,
+			"workflow_def_id": req.WorkflowDefID,
+			"schedule_type":   req.ScheduleType,
+		}).WithError(err).Warn("create schedule failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	id, _ := result.LastInsertId()
+	logger.WithFields(map[string]interface{}{
+		"schedule_id":     id,
+		"name":            req.Name,
+		"workflow_def_id": req.WorkflowDefID,
+		"schedule_type":   req.ScheduleType,
+	}).Info("schedule created")
 	response.Ok(c, id)
 }
 
@@ -160,6 +174,8 @@ func (s *ScheduleService) List(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /schedule/update/{id} [put]
 func (s *ScheduleService) Update(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	id, err := parseID(c)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -193,9 +209,21 @@ func (s *ScheduleService) Update(c *gin.Context) {
 
 	_, err = s.q.UpdateTaskScheduleByID(c, params)
 	if err != nil {
+		logger.WithFields(map[string]interface{}{
+			"schedule_id":     id,
+			"name":            req.Name,
+			"workflow_def_id": req.WorkflowDefID,
+			"schedule_type":   req.ScheduleType,
+		}).WithError(err).Warn("update schedule failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logger.WithFields(map[string]interface{}{
+		"schedule_id":     id,
+		"name":            req.Name,
+		"workflow_def_id": req.WorkflowDefID,
+		"schedule_type":   req.ScheduleType,
+	}).Info("schedule updated")
 	response.Ok(c, nil)
 }
 
@@ -210,6 +238,8 @@ func (s *ScheduleService) Update(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /schedule/delete/{id} [delete]
 func (s *ScheduleService) Delete(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	id, err := parseID(c)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -218,9 +248,11 @@ func (s *ScheduleService) Delete(c *gin.Context) {
 
 	_, err = s.q.DeleteTaskScheduleByID(c, id)
 	if err != nil {
+		logger.WithField("schedule_id", id).WithError(err).Warn("delete schedule failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logger.WithField("schedule_id", id).Info("schedule deleted")
 	response.Ok(c, nil)
 }
 
@@ -235,6 +267,8 @@ func (s *ScheduleService) Delete(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /schedule/enable/{id} [post]
 func (s *ScheduleService) Enable(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	id, err := parseID(c)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -246,9 +280,11 @@ func (s *ScheduleService) Enable(c *gin.Context) {
 		ID:     id,
 	})
 	if err != nil {
+		logger.WithField("schedule_id", id).WithError(err).Warn("enable schedule failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logger.WithField("schedule_id", id).Info("schedule enabled")
 	response.Ok(c, nil)
 }
 
@@ -273,6 +309,8 @@ func (s *ScheduleService) Enable(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /schedule/disable/{id} [post]
 func (s *ScheduleService) Disable(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	id, err := parseID(c)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -284,8 +322,10 @@ func (s *ScheduleService) Disable(c *gin.Context) {
 		ID:     id,
 	})
 	if err != nil {
+		logger.WithField("schedule_id", id).WithError(err).Warn("disable schedule failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logger.WithField("schedule_id", id).Info("schedule disabled")
 	response.Ok(c, nil)
 }

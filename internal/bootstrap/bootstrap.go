@@ -18,7 +18,7 @@ func Run(ctx context.Context) error {
 	}
 
 	logger := psl.GetLogger()
-	logger.Println("init log success")
+	logger.Info("init log success")
 
 	if err := psl.InitDB(ctx); err != nil {
 		return fmt.Errorf("init db failed: %w", err)

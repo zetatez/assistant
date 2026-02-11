@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"assistant/internal/app/repo"
+	"assistant/internal/bootstrap/psl"
 	"assistant/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -69,6 +70,8 @@ func (s *TaskAtomicService) Count(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /task_atomic/create [post]
 func (s *TaskAtomicService) Create(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	var req CreateTaskAtomicRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -97,11 +100,23 @@ func (s *TaskAtomicService) Create(c *gin.Context) {
 
 	result, err := s.q.CreateTaskAtomicDef(c, params)
 	if err != nil {
+		logger.WithFields(map[string]interface{}{
+			"name":          req.Name,
+			"task_category": req.TaskCategory,
+			"script_type":   req.ScriptType,
+		}).WithError(err).Warn("create atomic task failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	id, _ := result.LastInsertId()
+	logger.WithFields(map[string]interface{}{
+		"task_atomic_def_id": id,
+		"name":               req.Name,
+		"task_category":      req.TaskCategory,
+		"script_type":        req.ScriptType,
+		"rollback_supported": req.IsRollbackSupported,
+	}).Info("atomic task created")
 	response.Ok(c, id)
 }
 
@@ -169,6 +184,8 @@ func (s *TaskAtomicService) List(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /task_atomic/update/{id} [put]
 func (s *TaskAtomicService) Update(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	id, err := parseID(c)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -222,9 +239,22 @@ func (s *TaskAtomicService) Update(c *gin.Context) {
 
 	_, err = s.q.UpdateTaskAtomicDefByID(c, params)
 	if err != nil {
+		logger.WithFields(map[string]interface{}{
+			"task_atomic_def_id": id,
+			"name":               req.Name,
+			"task_category":      req.TaskCategory,
+			"script_type":        req.ScriptType,
+		}).WithError(err).Warn("update atomic task failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logger.WithFields(map[string]interface{}{
+		"task_atomic_def_id": id,
+		"name":               req.Name,
+		"task_category":      req.TaskCategory,
+		"script_type":        req.ScriptType,
+		"rollback_supported": req.IsRollbackSupported,
+	}).Info("atomic task updated")
 	response.Ok(c, nil)
 }
 
@@ -239,6 +269,8 @@ func (s *TaskAtomicService) Update(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /task_atomic/delete/{id} [delete]
 func (s *TaskAtomicService) Delete(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	id, err := parseID(c)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -247,9 +279,11 @@ func (s *TaskAtomicService) Delete(c *gin.Context) {
 
 	_, err = s.q.DeleteTaskAtomicDefByID(c, id)
 	if err != nil {
+		logger.WithField("task_atomic_def_id", id).WithError(err).Warn("delete atomic task failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logger.WithField("task_atomic_def_id", id).Info("atomic task deleted")
 	response.Ok(c, nil)
 }
 

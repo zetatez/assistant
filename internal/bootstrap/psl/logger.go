@@ -14,7 +14,9 @@ var (
 	onceLog sync.Once
 )
 
-func GetLogger() *logrus.Logger { return logger }
+func GetLogger() *logrus.Logger {
+	return logger
+}
 
 func InitLog() error {
 	var initErr error

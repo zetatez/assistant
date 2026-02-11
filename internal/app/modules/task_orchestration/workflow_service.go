@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"assistant/internal/app/repo"
+	"assistant/internal/bootstrap/psl"
 	"assistant/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -86,6 +87,8 @@ func (s *WorkflowService) Count(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /workflow/create [post]
 func (s *WorkflowService) Create(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	var req CreateWorkflowRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -118,11 +121,20 @@ func (s *WorkflowService) Create(c *gin.Context) {
 
 	result, err := s.q.CreateTaskWorkflowDef(c, params)
 	if err != nil {
+		logger.WithFields(map[string]interface{}{
+			"name":          req.Name,
+			"workflow_type": req.WorkflowType,
+		}).WithError(err).Warn("create workflow failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	workflowID, _ := result.LastInsertId()
+	logger.WithFields(map[string]interface{}{
+		"workflow_def_id": workflowID,
+		"name":            req.Name,
+		"workflow_type":   req.WorkflowType,
+	}).Info("workflow created")
 	response.Ok(c, workflowID)
 }
 
@@ -190,6 +202,8 @@ func (s *WorkflowService) List(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /workflow/update/{id} [put]
 func (s *WorkflowService) Update(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	id, err := parseID(c)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -224,9 +238,19 @@ func (s *WorkflowService) Update(c *gin.Context) {
 
 	_, err = s.q.UpdateTaskWorkflowDefByID(c, params)
 	if err != nil {
+		logger.WithFields(map[string]interface{}{
+			"workflow_def_id": id,
+			"name":            req.Name,
+			"workflow_type":   req.WorkflowType,
+		}).WithError(err).Warn("update workflow failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logger.WithFields(map[string]interface{}{
+		"workflow_def_id": id,
+		"name":            req.Name,
+		"workflow_type":   req.WorkflowType,
+	}).Info("workflow updated")
 	response.Ok(c, nil)
 }
 
@@ -241,6 +265,8 @@ func (s *WorkflowService) Update(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /workflow/delete/{id} [delete]
 func (s *WorkflowService) Delete(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	id, err := parseID(c)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -249,9 +275,11 @@ func (s *WorkflowService) Delete(c *gin.Context) {
 
 	_, err = s.q.DeleteTaskWorkflowDefByID(c, id)
 	if err != nil {
+		logger.WithField("workflow_def_id", id).WithError(err).Warn("delete workflow failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logger.WithField("workflow_def_id", id).Info("workflow deleted")
 	response.Ok(c, nil)
 }
 
@@ -319,6 +347,8 @@ func (s *WorkflowService) GetEdges(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /workflow/start/{id} [post]
 func (s *WorkflowService) Start(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	workflowID, err := parseID(c)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -333,6 +363,7 @@ func (s *WorkflowService) Start(c *gin.Context) {
 
 	workflow, err := s.q.GetTaskWorkflowDefByID(c, workflowID)
 	if err != nil {
+		logger.WithField("workflow_def_id", workflowID).WithError(err).Warn("start workflow failed: workflow not found")
 		response.Err(c, http.StatusNotFound, "workflow not found")
 		return
 	}
@@ -358,6 +389,11 @@ func (s *WorkflowService) Start(c *gin.Context) {
 
 	result, err := s.q.CreateTaskWorkflowInstance(c, instanceParams)
 	if err != nil {
+		logger.WithFields(map[string]interface{}{
+			"workflow_def_id": workflowID,
+			"execution_mode":  req.ExecutionMode,
+			"priority":        priority,
+		}).WithError(err).Warn("create workflow instance failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -382,6 +418,14 @@ func (s *WorkflowService) Start(c *gin.Context) {
 		ID:             instanceID,
 	})
 
+	logger.WithFields(map[string]interface{}{
+		"workflow_def_id":      workflowID,
+		"workflow_instance_id": instanceID,
+		"execution_mode":       string(executionMode),
+		"priority":             priority,
+		"node_count":           len(nodes),
+	}).Info("workflow instance created")
+
 	response.Ok(c, map[string]interface{}{
 		"instance_id": instanceID,
 		"status":      "PENDING",
@@ -399,6 +443,8 @@ func (s *WorkflowService) Start(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /workflow/pause/{id} [post]
 func (s *WorkflowService) Pause(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	instanceID, err := parseID(c)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -411,9 +457,11 @@ func (s *WorkflowService) Pause(c *gin.Context) {
 		ID:        instanceID,
 	})
 	if err != nil {
+		logger.WithField("workflow_instance_id", instanceID).WithError(err).Warn("pause workflow instance failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logger.WithField("workflow_instance_id", instanceID).Info("workflow instance paused")
 	response.Ok(c, nil)
 }
 
@@ -428,6 +476,8 @@ func (s *WorkflowService) Pause(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /workflow/resume/{id} [post]
 func (s *WorkflowService) Resume(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	instanceID, err := parseID(c)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -440,9 +490,11 @@ func (s *WorkflowService) Resume(c *gin.Context) {
 		ID:        instanceID,
 	})
 	if err != nil {
+		logger.WithField("workflow_instance_id", instanceID).WithError(err).Warn("resume workflow instance failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logger.WithField("workflow_instance_id", instanceID).Info("workflow instance resumed")
 	response.Ok(c, nil)
 }
 
@@ -457,6 +509,8 @@ func (s *WorkflowService) Resume(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /workflow/cancel/{id} [post]
 func (s *WorkflowService) Cancel(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	instanceID, err := parseID(c)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -469,9 +523,11 @@ func (s *WorkflowService) Cancel(c *gin.Context) {
 		ID:     instanceID,
 	})
 	if err != nil {
+		logger.WithField("workflow_instance_id", instanceID).WithError(err).Warn("cancel workflow instance failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logger.WithField("workflow_instance_id", instanceID).Info("workflow instance cancelled")
 	response.Ok(c, nil)
 }
 
@@ -486,6 +542,8 @@ func (s *WorkflowService) Cancel(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器错误"
 // @Router /workflow/rollback/{id} [post]
 func (s *WorkflowService) Rollback(c *gin.Context) {
+	logger := psl.GetLogger()
+
 	instanceID, err := parseID(c)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
@@ -498,9 +556,11 @@ func (s *WorkflowService) Rollback(c *gin.Context) {
 		ID:     instanceID,
 	})
 	if err != nil {
+		logger.WithField("workflow_instance_id", instanceID).WithError(err).Warn("rollback workflow instance failed")
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logger.WithField("workflow_instance_id", instanceID).Info("workflow instance marked as ROLLINGBACK")
 	response.Ok(c, map[string]interface{}{
 		"message": "rollback started",
 	})

@@ -17,9 +17,6 @@ var (
 )
 
 func GetDisLocker() *DisLocker {
-	if err := InitDisLocker(context.Background()); err != nil {
-		GetLogger().Fatalf("init distributed locker failed: %v", err)
-	}
 	return disLocker
 }
 
@@ -106,8 +103,8 @@ func (l *DisLocker) Lock(key, value string, ttl int) (bool, error) {
 		return false, fmt.Errorf("failed to check lock result: %w", err)
 	}
 
-	// If rows affected > 0, we either inserted or updated an expired lock
-	return rowsAffected > 0, nil
+	acquired := rowsAffected > 0
+	return acquired, nil
 }
 
 func (l *DisLocker) Unlock(key, value string) error {
@@ -152,7 +149,8 @@ func (l *DisLocker) Renew(key, value string, ttl int) (bool, error) {
 		return false, fmt.Errorf("failed to check renew result: %w", err)
 	}
 
-	return rowsAffected > 0, nil
+	renewed := rowsAffected > 0
+	return renewed, nil
 }
 
 func (l *DisLocker) IsLocked(key string) (bool, error) {
@@ -242,6 +240,7 @@ func (l *DisLocker) StartExpiredLockCleaner(parent context.Context, interval tim
 		for {
 			select {
 			case <-ctx.Done():
+				logger.Infof("expired lock cleaner stopped")
 				return
 			case <-ticker.C:
 				if n, err := l.CleanExpiredLocks(); err != nil {
@@ -252,6 +251,8 @@ func (l *DisLocker) StartExpiredLockCleaner(parent context.Context, interval tim
 			}
 		}
 	}()
+
+	GetLogger().Infof("start expired lock cleaner")
 
 	return cancel
 }

@@ -30,7 +30,7 @@ func Run(ctx context.Context) error {
 	}
 
 	for _, m := range modules {
-		logger.Printf("register module %s", m.Name())
+		logger.Infof("register module %s", m.Name())
 		m.Register(r)
 	}
 
