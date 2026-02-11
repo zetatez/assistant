@@ -5,9 +5,9 @@ CREATE TABLE IF NOT EXISTS todo_list (
   title VARCHAR(255) NOT NULL,
   content text NOT NULL,
   deadline VARCHAR(128) NOT NULL,
-  progress INT NOT NULL DEFAULT 0 COMMENT '任务完成进度 0-100',
-  priority INT NOT NULL DEFAULT 5 COMMENT '任务优先级 1-10, 越高越紧急',
-  task_status ENUM('PENDING', 'IN_PROGRESS', 'COMPLETED') NOT NULL DEFAULT 'PENDING' COMMENT '任务状态',
+  progress INT NOT NULL DEFAULT 0,
+  priority INT NOT NULL DEFAULT 5,
+  task_status ENUM('PENDING', 'IN_PROGRESS', 'COMPLETED') NOT NULL DEFAULT 'PENDING',
   PRIMARY KEY (id),
   KEY idx_priority (priority DESC)
 ) COMMENT='代办事项表';

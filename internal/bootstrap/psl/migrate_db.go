@@ -121,7 +121,7 @@ func alreadyApplied(ctx context.Context, commitID string) (bool, error) {
 }
 
 func adminUserExists(ctx context.Context, username string) (bool, error) {
-	const q = "SELECT 1 FROM user WHERE user_name = ? LIMIT 1"
+	const q = "SELECT 1 FROM sys_user WHERE user_name = ? LIMIT 1"
 	var one int
 	err := GetDB().QueryRowContext(ctx, q, username).Scan(&one)
 	if err == sql.ErrNoRows {
@@ -161,7 +161,7 @@ func initAdmin(ctx context.Context) error {
 		return fmt.Errorf("failed to hash admin password: %w", err)
 	}
 
-	dml := "INSERT IGNORE INTO user (user_name, password, email) VALUES (?, ?, ?)"
+	dml := "INSERT IGNORE INTO sys_user (user_name, password, email) VALUES (?, ?, ?)"
 	result, err := GetDB().ExecContext(ctx, dml, adminConfig.Username, password, adminConfig.Email)
 	if err != nil {
 		return fmt.Errorf("failed to insert admin user: %w", err)
