@@ -14,7 +14,7 @@ func Init() {
 
 	psl.InitDisLocker()
 
-	psl.Migrate()
+	psl.MigrateDB()
 
 	app.Run()
 }

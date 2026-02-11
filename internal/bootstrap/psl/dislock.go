@@ -43,7 +43,7 @@ func InitDisLocker() {
 			db: GetDB(),
 		}
 	})
-	GetLogger().Info("distributed locker initialized")
+	GetLogger().Info("init distributed locker success")
 }
 
 func createSysDistributedLockTable(ctx context.Context, db *sql.DB) error {

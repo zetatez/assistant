@@ -26,5 +26,5 @@ log:
   max_age_days: 14
   compress: true
   josn_format: true
-  console: true
+  console: false
 

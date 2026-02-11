@@ -1,6 +1,6 @@
 package psl
 
-var userTables = []Change{
+var userTables = []UpDownSQL{
 	{
 		UpSQL: `
 		CREATE TABLE IF NOT EXISTS user (

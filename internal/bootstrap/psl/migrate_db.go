@@ -7,23 +7,20 @@ import (
 	"fmt"
 )
 
-type Change struct {
+type UpDownSQL struct {
 	UpSQL   string
 	DownSQL string
 }
 
-func Migrate() {
+func MigrateDB() {
 	logger := GetLogger()
-	logger.Info("starting database changes...")
-
-	InitConfig()
-	InitDB()
+	logger.Info("migrate db...")
 
 	if err := initSysMigrateTable(); err != nil {
 		logger.Fatalf("migrate failed: %v", err)
 	}
 
-	if err := initUserTable(userTables); err != nil {
+	if err := initUserTables(userTables); err != nil {
 		logger.Fatalf("migrate failed: %v", err)
 	}
 
@@ -31,7 +28,7 @@ func Migrate() {
 		logger.Fatalf("migrate failed: %v", err)
 	}
 
-	logger.Info("all changes completed successfully")
+	logger.Info("migrate db success")
 }
 
 func initSysMigrateTable() error {
@@ -53,7 +50,7 @@ func initSysMigrateTable() error {
 	return err
 }
 
-func initUserTable(changes []Change) error {
+func initUserTables(changes []UpDownSQL) error {
 	logger := GetLogger()
 	logger.Infof("processing %d changes...", len(changes))
 
@@ -153,7 +150,7 @@ func initAdmin() error {
 		return err
 	}
 	if exists {
-		logger.Infof("admin user '%s' already exists, skip init", adminConfig.Username)
+		logger.Infof("admin user '%s' already exists, skip", adminConfig.Username)
 		return nil
 	}
 
