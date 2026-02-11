@@ -5,7 +5,7 @@ import (
 	"assistant/internal/app/module"
 	"assistant/internal/app/modules/health"
 	"assistant/internal/app/modules/sys_user"
-	"assistant/internal/app/modules/task_orchestration"
+	"assistant/internal/app/modules/todo_list"
 	"assistant/internal/bootstrap/psl"
 	"context"
 	"fmt"
@@ -26,7 +26,7 @@ func Run(ctx context.Context) error {
 	modules := []module.Module{
 		health.NewHealthModule(),
 		sys_user.NewSysUserModule(),
-		task_orchestration.NewTaskOrchestrationModule(),
+		todo_list.NewTodoListModule(),
 	}
 
 	for _, m := range modules {
@@ -40,10 +40,7 @@ func Run(ctx context.Context) error {
 	addr := fmt.Sprintf(":%d", psl.GetConfig().App.Port)
 	logger.Infof("server running at %s", addr)
 
-	srv := &http.Server{
-		Addr:    addr,
-		Handler: r,
-	}
+	srv := &http.Server{Addr: addr, Handler: r}
 
 	errCh := make(chan error, 1)
 	go func() {
