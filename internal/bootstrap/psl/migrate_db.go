@@ -66,7 +66,7 @@ func initUserTables(changes []UpDownSQL) error {
 		}
 		if applied {
 			skippedCount++
-			logger.Debugf("skipping change %d/%d (already applied)", i+1, len(changes))
+			logger.Debugf("already applied, skipping change %d/%d", i+1, len(changes))
 			continue
 		}
 
