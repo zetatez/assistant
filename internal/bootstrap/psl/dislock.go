@@ -43,14 +43,9 @@ func InitDisLocker(ctx context.Context) error {
 			initErr = err
 			return
 		}
-		disLocker = &DisLocker{
-			db: GetDB(),
-		}
+		disLocker = &DisLocker{db: GetDB()}
 	})
-	if initErr != nil {
-		return initErr
-	}
-	return nil
+	return initErr
 }
 
 func createSysDistributedLockTable(ctx context.Context, db *sql.DB) error {
@@ -234,8 +229,6 @@ func (l *DisLocker) CleanExpiredLocks() (int64, error) {
 	return rowsAffected, nil
 }
 
-// StartExpiredLockCleaner starts a background goroutine that periodically deletes expired locks.
-// Call the returned cancel function to stop it.
 func (l *DisLocker) StartExpiredLockCleaner(parent context.Context, interval time.Duration) context.CancelFunc {
 	if interval <= 0 {
 		interval = time.Minute
@@ -243,13 +236,7 @@ func (l *DisLocker) StartExpiredLockCleaner(parent context.Context, interval tim
 
 	ctx, cancel := context.WithCancel(parent)
 	go func() {
-		// best-effort initial cleanup to keep the table small.
-		if n, err := l.CleanExpiredLocks(); err != nil {
-			GetLogger().Warnf("failed to clean expired locks: %v", err)
-		} else if n > 0 {
-			GetLogger().Infof("cleaned %d expired locks", n)
-		}
-
+		logger := GetLogger()
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 		for {
@@ -258,9 +245,9 @@ func (l *DisLocker) StartExpiredLockCleaner(parent context.Context, interval tim
 				return
 			case <-ticker.C:
 				if n, err := l.CleanExpiredLocks(); err != nil {
-					GetLogger().Warnf("failed to clean expired locks: %v", err)
+					logger.Warnf("failed to clean expired locks: %v", err)
 				} else if n > 0 {
-					GetLogger().Infof("cleaned %d expired locks", n)
+					logger.Infof("cleaned %d expired locks", n)
 				}
 			}
 		}

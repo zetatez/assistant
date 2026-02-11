@@ -5,6 +5,7 @@ import (
 	"assistant/internal/bootstrap/psl"
 	"context"
 	"fmt"
+	"time"
 )
 
 func Run(ctx context.Context) error {
@@ -33,6 +34,7 @@ func Run(ctx context.Context) error {
 	if err := psl.InitDisLocker(ctx); err != nil {
 		return fmt.Errorf("init distributed locker failed: %w", err)
 	}
+	psl.GetDisLocker().StartExpiredLockCleaner(ctx, 15*time.Minute)
 	logger.Info("init distributed locker success")
 
 	if err := psl.MigrateDB(ctx); err != nil {

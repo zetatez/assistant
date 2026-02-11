@@ -46,6 +46,10 @@ func initSysMigrateTable(ctx context.Context) error {
 	) COMMENT='数据库变更记录';
 	`
 	_, err := GetDB().ExecContext(ctx, query)
+	if err != nil {
+		return err
+	}
+
 	return err
 }
 
