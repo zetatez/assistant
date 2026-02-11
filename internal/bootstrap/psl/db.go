@@ -4,6 +4,7 @@ import (
 	"assistant/pkg/xdb"
 	"context"
 	"database/sql"
+	"fmt"
 	"sync"
 )
 
@@ -14,13 +15,15 @@ var (
 
 func GetDB() *sql.DB { return db }
 
-func InitDB() {
+func InitDB(ctx context.Context) error {
+	var initErr error
 	onceDB.Do(func() {
 		var err error
-		db, err = xdb.NewDBPool(context.Background(), GetConfig().DB)
+		db, err = xdb.NewDBPool(ctx, GetConfig().DB)
 		if err != nil {
-			GetLogger().Fatalf("init db failed: %v", err)
+			initErr = fmt.Errorf("new db pool: %w", err)
+			return
 		}
 	})
-	GetLogger().Infof("init db success")
+	return initErr
 }

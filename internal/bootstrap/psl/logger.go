@@ -1,6 +1,7 @@
 package psl
 
 import (
+	"fmt"
 	"sync"
 
 	"assistant/pkg/xlog"
@@ -15,9 +16,15 @@ var (
 
 func GetLogger() *logrus.Logger { return logger }
 
-func InitLog() {
+func InitLog() error {
+	var initErr error
 	onceLog.Do(func() {
-		logger = xlog.NewLogger(GetConfig().Log)
+		var err error
+		logger, err = xlog.NewLogger(GetConfig().Log)
+		if err != nil {
+			initErr = fmt.Errorf("new logger failed: %w", err)
+			return
+		}
 	})
-	logger.Println("init log success")
+	return initErr
 }

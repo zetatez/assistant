@@ -20,7 +20,7 @@ type LogConfig struct {
 	Console    bool   `mapstructure:"console"`
 }
 
-func NewLogger(cfg LogConfig) *logrus.Logger {
+func NewLogger(cfg LogConfig) (*logrus.Logger, error) {
 	logger := logrus.New()
 
 	level, err := logrus.ParseLevel(cfg.Level)
@@ -31,16 +31,11 @@ func NewLogger(cfg LogConfig) *logrus.Logger {
 
 	if cfg.JSONFormat {
 		logger.SetFormatter(
-			&logrus.JSONFormatter{
-				TimestampFormat: time.RFC3339,
-			},
+			&logrus.JSONFormatter{TimestampFormat: time.RFC3339},
 		)
 	} else {
 		logger.SetFormatter(
-			&logrus.TextFormatter{
-				FullTimestamp:   true,
-				TimestampFormat: "2006-01-02 15:04:05",
-			},
+			&logrus.TextFormatter{TimestampFormat: "2006-01-02 15:04:05", FullTimestamp: true},
 		)
 	}
 
@@ -66,5 +61,5 @@ func NewLogger(cfg LogConfig) *logrus.Logger {
 	}
 
 	logger.SetOutput(io.MultiWriter(outputs...))
-	return logger
+	return logger, nil
 }

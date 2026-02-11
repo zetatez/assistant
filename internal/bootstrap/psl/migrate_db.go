@@ -12,28 +12,27 @@ type UpDownSQL struct {
 	DownSQL string
 }
 
-func MigrateDB() {
+func MigrateDB(ctx context.Context) error {
 	logger := GetLogger()
 	logger.Info("migrate db...")
 
-	if err := initSysMigrateTable(); err != nil {
-		logger.Fatalf("migrate failed: %v", err)
+	if err := initSysMigrateTable(ctx); err != nil {
+		return err
 	}
 
-	if err := initUserTables(userTables); err != nil {
-		logger.Fatalf("migrate failed: %v", err)
+	if err := initUserTables(ctx, userTables); err != nil {
+		return err
 	}
 
-	if err := initAdmin(); err != nil {
-		logger.Fatalf("migrate failed: %v", err)
+	if err := initAdmin(ctx); err != nil {
+		return err
 	}
 
 	logger.Info("migrate db success")
+	return nil
 }
 
-func initSysMigrateTable() error {
-	ctx := context.Background()
-
+func initSysMigrateTable(ctx context.Context) error {
 	query := `
 	CREATE TABLE IF NOT EXISTS sys_migrate (
 		id bigint NOT NULL AUTO_INCREMENT,
@@ -50,7 +49,7 @@ func initSysMigrateTable() error {
 	return err
 }
 
-func initUserTables(changes []UpDownSQL) error {
+func initUserTables(ctx context.Context, changes []UpDownSQL) error {
 	logger := GetLogger()
 	logger.Infof("processing %d changes...", len(changes))
 
@@ -60,7 +59,7 @@ func initUserTables(changes []UpDownSQL) error {
 	for i, m := range changes {
 		commitID := hash.SHA256([]byte(m.UpSQL + m.DownSQL))
 
-		applied, err := alreadyApplied(commitID)
+		applied, err := alreadyApplied(ctx, commitID)
 		if err != nil {
 			return err
 		}
@@ -70,12 +69,12 @@ func initUserTables(changes []UpDownSQL) error {
 			continue
 		}
 
-		tx, err := GetDB().Begin()
+		tx, err := GetDB().BeginTx(ctx, nil)
 		if err != nil {
 			return fmt.Errorf("begin transaction: %w", err)
 		}
 
-		if _, err := tx.Exec(m.UpSQL); err != nil {
+		if _, err := tx.ExecContext(ctx, m.UpSQL); err != nil {
 			rbErr := tx.Rollback()
 			if rbErr != nil {
 				return fmt.Errorf("change %d/%d failed: %w (rollback failed: %v)\nSQL: %s", i+1, len(changes), err, rbErr, m.UpSQL)
@@ -84,7 +83,7 @@ func initUserTables(changes []UpDownSQL) error {
 		}
 
 		recordSQL := "INSERT IGNORE INTO sys_migrate (commit_id, up_sql, down_sql) VALUES (?, ?, ?)"
-		if _, err := tx.Exec(recordSQL, commitID, m.UpSQL, m.DownSQL); err != nil {
+		if _, err := tx.ExecContext(ctx, recordSQL, commitID, m.UpSQL, m.DownSQL); err != nil {
 			rbErr := tx.Rollback()
 			if rbErr != nil {
 				return fmt.Errorf("record change %d/%d: %w (rollback failed: %v)\nSQL: %s", i+1, len(changes), err, rbErr, recordSQL)
@@ -104,10 +103,10 @@ func initUserTables(changes []UpDownSQL) error {
 	return nil
 }
 
-func alreadyApplied(commitID string) (bool, error) {
+func alreadyApplied(ctx context.Context, commitID string) (bool, error) {
 	const query = "SELECT 1 FROM sys_migrate WHERE commit_id = ? LIMIT 1"
 	var one int
-	err := GetDB().QueryRow(query, commitID).Scan(&one)
+	err := GetDB().QueryRowContext(ctx, query, commitID).Scan(&one)
 	if err == sql.ErrNoRows {
 		return false, nil
 	}
@@ -130,10 +129,9 @@ func adminUserExists(ctx context.Context, username string) (bool, error) {
 	return true, nil
 }
 
-func initAdmin() error {
+func initAdmin(ctx context.Context) error {
 	logger := GetLogger()
 	logger.Info("initializing admin user...")
-	ctx := context.Background()
 
 	cfg := GetConfig()
 	adminConfig := cfg.App.Root
@@ -160,7 +158,7 @@ func initAdmin() error {
 	}
 
 	dml := "INSERT IGNORE INTO user (user_name, password, email) VALUES (?, ?, ?)"
-	result, err := GetDB().Exec(dml, adminConfig.Username, password, adminConfig.Email)
+	result, err := GetDB().ExecContext(ctx, dml, adminConfig.Username, password, adminConfig.Email)
 	if err != nil {
 		return fmt.Errorf("failed to insert admin user: %w", err)
 	}

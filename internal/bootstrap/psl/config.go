@@ -16,16 +16,17 @@ var (
 
 func GetConfig() *Config { return config }
 
-func InitConfig() {
-	onceConfig.Do(
-		func() {
-			var err error
-			config, err = LoadConfig()
-			if err != nil {
-				panic(err)
-			}
-		},
-	)
+func InitConfig() error {
+	var initErr error
+	onceConfig.Do(func() {
+		var err error
+		config, err = LoadConfig()
+		if err != nil {
+			initErr = fmt.Errorf("load config failed: %w", err)
+			return
+		}
+	})
+	return initErr
 }
 
 type Config struct {

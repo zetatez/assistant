@@ -7,8 +7,17 @@ package main
 
 import (
 	"assistant/internal/bootstrap"
+	"context"
+	"log"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
-	bootstrap.Init()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	if err := bootstrap.Run(ctx); err != nil {
+		log.Fatalf("server exited with error: %v", err)
+	}
 }

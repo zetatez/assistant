@@ -17,7 +17,9 @@ var (
 )
 
 func GetDisLocker() *DisLocker {
-	InitDisLocker()
+	if err := InitDisLocker(context.Background()); err != nil {
+		GetLogger().Fatalf("init distributed locker failed: %v", err)
+	}
 	return disLocker
 }
 
@@ -34,16 +36,21 @@ type DisLockInfo struct {
 	UpdateTime time.Time
 }
 
-func InitDisLocker() {
+func InitDisLocker(ctx context.Context) error {
+	var initErr error
 	onceDisLocker.Do(func() {
-		if err := createSysDistributedLockTable(context.Background(), GetDB()); err != nil {
-			GetLogger().Fatalf("failed to create sys_distributed_lock table: %v", err)
+		if err := createSysDistributedLockTable(ctx, GetDB()); err != nil {
+			initErr = err
+			return
 		}
 		disLocker = &DisLocker{
 			db: GetDB(),
 		}
 	})
-	GetLogger().Info("init distributed locker success")
+	if initErr != nil {
+		return initErr
+	}
+	return nil
 }
 
 func createSysDistributedLockTable(ctx context.Context, db *sql.DB) error {

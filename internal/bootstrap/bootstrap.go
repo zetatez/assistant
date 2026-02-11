@@ -3,18 +3,42 @@ package bootstrap
 import (
 	"assistant/internal/app"
 	"assistant/internal/bootstrap/psl"
+	"context"
+	"fmt"
 )
 
-func Init() {
-	psl.InitConfig()
+func Run(ctx context.Context) error {
+	if err := psl.InitConfig(); err != nil {
+		return fmt.Errorf("init config failed: %w", err)
+	}
 
-	psl.InitLog()
+	if err := psl.InitLog(); err != nil {
+		return fmt.Errorf("init log failed: %w", err)
+	}
 
-	psl.InitDB()
+	logger := psl.GetLogger()
+	logger.Println("init log success")
 
-	psl.InitDisLocker()
+	if err := psl.InitDB(ctx); err != nil {
+		return fmt.Errorf("init db failed: %w", err)
+	}
+	logger.Info("init db success")
 
-	psl.MigrateDB()
+	defer func() {
+		if db := psl.GetDB(); db != nil {
+			db.Close()
+		}
+	}()
 
-	app.Run()
+	if err := psl.InitDisLocker(ctx); err != nil {
+		return fmt.Errorf("init distributed locker failed: %w", err)
+	}
+	logger.Info("init distributed locker success")
+
+	if err := psl.MigrateDB(ctx); err != nil {
+		return fmt.Errorf("migrate db failed: %w", err)
+	}
+	logger.Info("migrate db success")
+
+	return app.Run(ctx)
 }
