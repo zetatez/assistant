@@ -34,34 +34,8 @@ func Migrate() {
 	logger.Info("all changes completed successfully")
 }
 
-func tableExists(ctx context.Context, db *sql.DB, table string) (bool, error) {
-	const q = `
-		SELECT 1
-		FROM information_schema.tables
-		WHERE table_schema = DATABASE() AND table_name = ?
-		LIMIT 1
-	`
-	var one int
-	err := db.QueryRowContext(ctx, q, table).Scan(&one)
-	if err == sql.ErrNoRows {
-		return false, nil
-	}
-	if err != nil {
-		return false, fmt.Errorf("check table exists %q: %w", table, err)
-	}
-	return true, nil
-}
-
 func initSysMigrateTable() error {
 	ctx := context.Background()
-	exists, err := tableExists(ctx, GetDB(), "sys_migrate")
-	if err != nil {
-		return err
-	}
-	if exists {
-		GetLogger().Info("sys_migrate already exists, skip init")
-		return nil
-	}
 
 	query := `
 	CREATE TABLE IF NOT EXISTS sys_migrate (
@@ -75,7 +49,7 @@ func initSysMigrateTable() error {
 		UNIQUE KEY uk_ci (commit_id)
 	) COMMENT='数据库变更记录';
 	`
-	_, err = GetDB().ExecContext(ctx, query)
+	_, err := GetDB().ExecContext(ctx, query)
 	return err
 }
 
@@ -95,7 +69,7 @@ func initUserTable(changes []Change) error {
 		}
 		if applied {
 			skippedCount++
-			logger.Debugf("skipping migration %d/%d (already applied)", i+1, len(changes))
+			logger.Debugf("skipping change %d/%d (already applied)", i+1, len(changes))
 			continue
 		}
 
@@ -107,18 +81,18 @@ func initUserTable(changes []Change) error {
 		if _, err := tx.Exec(m.UpSQL); err != nil {
 			rbErr := tx.Rollback()
 			if rbErr != nil {
-				return fmt.Errorf("migration %d/%d failed: %w (rollback failed: %v)\nSQL: %s", i+1, len(changes), err, rbErr, m.UpSQL)
+				return fmt.Errorf("change %d/%d failed: %w (rollback failed: %v)\nSQL: %s", i+1, len(changes), err, rbErr, m.UpSQL)
 			}
-			return fmt.Errorf("migration %d/%d failed: %w\nSQL: %s", i+1, len(changes), err, m.UpSQL)
+			return fmt.Errorf("change %d/%d failed: %w\nSQL: %s", i+1, len(changes), err, m.UpSQL)
 		}
 
 		recordSQL := "INSERT IGNORE INTO sys_migrate (commit_id, up_sql, down_sql) VALUES (?, ?, ?)"
 		if _, err := tx.Exec(recordSQL, commitID, m.UpSQL, m.DownSQL); err != nil {
 			rbErr := tx.Rollback()
 			if rbErr != nil {
-				return fmt.Errorf("record migration %d/%d: %w (rollback failed: %v)\nSQL: %s", i+1, len(changes), err, rbErr, recordSQL)
+				return fmt.Errorf("record change %d/%d: %w (rollback failed: %v)\nSQL: %s", i+1, len(changes), err, rbErr, recordSQL)
 			}
-			return fmt.Errorf("record migration %d/%d: %w\nSQL: %s", i+1, len(changes), err, recordSQL)
+			return fmt.Errorf("record change %d/%d: %w\nSQL: %s", i+1, len(changes), err, recordSQL)
 		}
 
 		if err := tx.Commit(); err != nil {
@@ -126,7 +100,7 @@ func initUserTable(changes []Change) error {
 		}
 
 		appliedCount++
-		logger.Infof("applied migration %d/%d", i+1, len(changes))
+		logger.Infof("applied change %d/%d", i+1, len(changes))
 	}
 
 	logger.Infof("changes completed: %d applied, %d skipped", appliedCount, skippedCount)

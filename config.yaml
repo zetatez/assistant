@@ -25,6 +25,6 @@ log:
   max_backups: 7
   max_age_days: 14
   compress: true
-  josn_format: false
+  josn_format: true
   console: true
 
