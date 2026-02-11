@@ -38,7 +38,7 @@ func initSysMigrateTable(ctx context.Context) error {
 		id bigint NOT NULL AUTO_INCREMENT,
 		gmt_create timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		gmt_modified timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-		commit_id varchar(256) NOT NULL,
+		commit_id varchar(256) NOT NULL DEFAULT '',
 		up_sql text NOT NULL,
 		down_sql text NOT NULL,
 		PRIMARY KEY (id),

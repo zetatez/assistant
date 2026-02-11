@@ -51,9 +51,9 @@ func createSysDistributedLockTable(ctx context.Context, db *sql.DB) error {
 			id BIGINT AUTO_INCREMENT NOT NULL,
 			gmt_create TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			gmt_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-			lock_key VARCHAR(255) NOT NULL COMMENT '锁的唯一标识',
-			lock_value VARCHAR(255) NOT NULL COMMENT '锁的值，用于标识锁的持有者',
-			expire_time TIMESTAMP NOT NULL COMMENT '锁的过期时间',
+			lock_key VARCHAR(255) NOT NULL DEFAULT '' COMMENT '锁的唯一标识',
+			lock_value VARCHAR(255) NOT NULL DEFAULT '' COMMENT '锁的值，用于标识锁的持有者',
+			expire_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '锁的过期时间',
 			PRIMARY KEY (id),
 			UNIQUE KEY uk_lock_key (lock_key),
 			KEY idx_expire_time (expire_time)
