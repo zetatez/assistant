@@ -1,7 +1,8 @@
 // @title Assistant API
 // @version 1.0
 // @description Example Swagger setup for Golang Gin.
-// @host localhost:1234
+// @schemes http
+// @host 127.0.0.1:1234
 // @BasePath /
 package main
 
