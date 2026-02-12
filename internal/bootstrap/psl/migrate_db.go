@@ -120,7 +120,7 @@ func alreadyApplied(ctx context.Context, commitID string) (bool, error) {
 	return true, nil
 }
 
-func userExists(ctx context.Context, username string) (bool, error) {
+func sysUserExists(ctx context.Context, username string) (bool, error) {
 	const q = "SELECT 1 FROM sys_user WHERE user_name = ? LIMIT 1"
 	var one int
 	err := GetDB().QueryRowContext(ctx, q, username).Scan(&one)
@@ -128,53 +128,85 @@ func userExists(ctx context.Context, username string) (bool, error) {
 		return false, nil
 	}
 	if err != nil {
-		return false, fmt.Errorf("check admin user exists: %w", err)
+		return false, fmt.Errorf("check user '%s' exists: %w", username, err)
 	}
 	return true, nil
 }
 
-func initDefaultUsers(ctx context.Context) error {
-	logger := GetLogger()
-	logger.Info("initializing admin user...")
+type SysUser struct {
+	Username string
+	Password string
+	Email    string
+}
 
-	cfg := GetConfig()
-	adminConfig := cfg.App.Root
-
-	if adminConfig.Username == "" {
-		adminConfig.Username = "admin"
-	}
-	if adminConfig.Password == "" {
-		adminConfig.Password = "AAaa00__"
+func createSysUser(ctx context.Context, u SysUser) (bool, error) {
+	if u.Username == "" {
+		return false, fmt.Errorf("username is empty")
 	}
 
-	exists, err := userExists(ctx, adminConfig.Username)
+	exists, err := sysUserExists(ctx, u.Username)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if exists {
-		logger.Infof("admin user '%s' already exists, skip", adminConfig.Username)
-		return nil
+		return false, nil
 	}
 
-	password, err := hash.HashPassword(adminConfig.Password)
+	password, err := hash.HashPassword(u.Password)
 	if err != nil {
-		return fmt.Errorf("failed to hash admin password: %w", err)
+		return false, fmt.Errorf("hash password: %w", err)
 	}
 
-	dml := "INSERT IGNORE INTO sys_user (user_name, password, email) VALUES (?, ?, ?)"
-	result, err := GetDB().ExecContext(ctx, dml, adminConfig.Username, password, adminConfig.Email)
+	const dml = "INSERT IGNORE INTO sys_user (user_name, password, email) VALUES (?, ?, ?)"
+	result, err := GetDB().ExecContext(ctx, dml, u.Username, password, u.Email)
 	if err != nil {
-		return fmt.Errorf("failed to insert admin user: %w", err)
+		return false, fmt.Errorf("insert user: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+		return false, fmt.Errorf("get rows affected: %w", err)
 	}
-	if rowsAffected > 0 {
-		logger.Infof("admin user '%s' created", adminConfig.Username)
-	} else {
-		logger.Infof("admin user '%s' already exists", adminConfig.Username)
+	return rowsAffected > 0, nil
+}
+
+func initDefaultUsers(ctx context.Context) error {
+	logger := GetLogger()
+	logger.Info("initializing default users...")
+
+	cfg := GetConfig()
+	adminConfig := cfg.App.Root
+
+	adminUser := SysUser{
+		Username: adminConfig.Username,
+		Password: adminConfig.Password,
+		Email:    adminConfig.Email,
+	}
+	if adminUser.Username == "" {
+		adminUser.Username = "admin"
+	}
+	if adminUser.Password == "" {
+		adminUser.Password = "AAaa00__"
+	}
+
+	guestUser := SysUser{
+		Username: "guest",
+		Password: "guest",
+		Email:    "guest@local",
+	}
+
+	users := []SysUser{adminUser, guestUser}
+
+	for _, u := range users {
+		created, err := createSysUser(ctx, u)
+		if err != nil {
+			return fmt.Errorf("init default user '%s': %w", u.Username, err)
+		}
+		if created {
+			logger.Infof("default user '%s' created", u.Username)
+		} else {
+			logger.Infof("default user '%s' already exists, skip", u.Username)
+		}
 	}
 
 	return nil
