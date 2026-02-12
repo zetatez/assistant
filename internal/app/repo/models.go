@@ -63,6 +63,8 @@ type SysServer struct {
 	AK          string    `json:"ak"`
 	SK          string    `json:"sk"`
 	SvrStatus   string    `json:"svr_status"`
+	CpuUsage    float64   `json:"cpu_usage"`
+	MemUsage    float64   `json:"mem_usage"`
 }
 
 // 用户表

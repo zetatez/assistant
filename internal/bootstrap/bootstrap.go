@@ -42,5 +42,12 @@ func Run(ctx context.Context) error {
 	}
 	logger.Info("migrate db success")
 
+	svrIP, err := psl.EnsureLocalSysServerRegistered(ctx)
+	if err != nil {
+		return fmt.Errorf("register local sys_server failed: %w", err)
+	}
+	logger.Infof("local sys_server registered: %s", svrIP)
+	psl.StartSysServerMonitor(ctx, svrIP, 15*time.Second)
+
 	return app.Run(ctx)
 }

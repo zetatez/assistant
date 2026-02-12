@@ -10,7 +10,7 @@ var userTables = []UpDownSQL{
 			user_name VARCHAR(255) NOT NULL DEFAULT '',
 			password VARCHAR(255) NOT NULL DEFAULT '',
 			email VARCHAR(128) NOT NULL DEFAULT '',
-			is_internal TINYINT NOT NULL DEFAULT 0 COMMENT 's internal user: 1=yes,0=no',
+			is_internal TINYINT NOT NULL DEFAULT 0 COMMENT 'internal user: 1=yes,0=no',
 			PRIMARY KEY (id),
 			UNIQUE KEY uk_user_name (user_name),
 			UNIQUE KEY uk_email (email)
@@ -31,6 +31,8 @@ var userTables = []UpDownSQL{
 			ak VARCHAR(255) NOT NULL DEFAULT '',
 			sk VARCHAR(2048) NOT NULL DEFAULT '',
 			svr_status VARCHAR(32) NOT NULL DEFAULT '',
+			cpu_usage FLOAT NOT NULL DEFAULT 0 COMMENT 'cpu usage percent',
+			mem_usage FLOAT NOT NULL DEFAULT 0 COMMENT 'memory usage percent',
 			PRIMARY KEY (id),
 			UNIQUE KEY uk_svr_ip (svr_ip)
 		) COMMENT='服务器表';

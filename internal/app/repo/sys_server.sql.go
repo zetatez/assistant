@@ -61,7 +61,9 @@ SELECT
   svr_ip,
   ak,
   sk,
-  svr_status
+  svr_status,
+  cpu_usage,
+  mem_usage
 FROM sys_server
 WHERE id = ?
 LIMIT 1
@@ -79,6 +81,8 @@ func (q *Queries) GetSysServerByID(ctx context.Context, id int64) (SysServer, er
 		&i.AK,
 		&i.SK,
 		&i.SvrStatus,
+		&i.CpuUsage,
+		&i.MemUsage,
 	)
 	return i, err
 }
@@ -92,7 +96,9 @@ SELECT
   svr_ip,
   ak,
   sk,
-  svr_status
+  svr_status,
+  cpu_usage,
+  mem_usage
 FROM sys_server
 ORDER BY id DESC
 LIMIT ? OFFSET ?
@@ -121,6 +127,8 @@ func (q *Queries) ListSysServers(ctx context.Context, arg ListSysServersParams) 
 			&i.AK,
 			&i.SK,
 			&i.SvrStatus,
+			&i.CpuUsage,
+			&i.MemUsage,
 		); err != nil {
 			return nil, err
 		}
@@ -144,7 +152,9 @@ SELECT
   svr_ip,
   ak,
   sk,
-  svr_status
+  svr_status,
+  cpu_usage,
+  mem_usage
 FROM sys_server
 WHERE idc = ?
 ORDER BY id DESC
@@ -175,6 +185,8 @@ func (q *Queries) SearchSysServersByIDC(ctx context.Context, arg SearchSysServer
 			&i.AK,
 			&i.SK,
 			&i.SvrStatus,
+			&i.CpuUsage,
+			&i.MemUsage,
 		); err != nil {
 			return nil, err
 		}
@@ -198,7 +210,9 @@ SELECT
   svr_ip,
   ak,
   sk,
-  svr_status
+  svr_status,
+  cpu_usage,
+  mem_usage
 FROM sys_server
 WHERE idc like ?
   AND svr_ip like ?
@@ -236,6 +250,8 @@ func (q *Queries) SearchSysServersByIDCAndSvrIP(ctx context.Context, arg SearchS
 			&i.AK,
 			&i.SK,
 			&i.SvrStatus,
+			&i.CpuUsage,
+			&i.MemUsage,
 		); err != nil {
 			return nil, err
 		}
@@ -259,7 +275,9 @@ SELECT
   svr_ip,
   ak,
   sk,
-  svr_status
+  svr_status,
+  cpu_usage,
+  mem_usage
 FROM sys_server
 WHERE svr_ip like ?
 ORDER BY id DESC
@@ -290,6 +308,8 @@ func (q *Queries) SearchSysServersBySvrIP(ctx context.Context, arg SearchSysServ
 			&i.AK,
 			&i.SK,
 			&i.SvrStatus,
+			&i.CpuUsage,
+			&i.MemUsage,
 		); err != nil {
 			return nil, err
 		}
@@ -329,6 +349,31 @@ func (q *Queries) UpdateSysServer(ctx context.Context, arg UpdateSysServerParams
 		arg.AK,
 		arg.SK,
 		arg.ID,
+	)
+}
+
+const updateSysServerMetricsBySvrIP = `-- name: UpdateSysServerMetricsBySvrIP :execresult
+UPDATE sys_server
+SET cpu_usage = ?,
+    mem_usage = ?,
+    svr_status = ?
+WHERE svr_ip = ?
+LIMIT 1
+`
+
+type UpdateSysServerMetricsBySvrIPParams struct {
+	CpuUsage  float64 `json:"cpu_usage"`
+	MemUsage  float64 `json:"mem_usage"`
+	SvrStatus string  `json:"svr_status"`
+	SvrIP     string  `json:"svr_ip"`
+}
+
+func (q *Queries) UpdateSysServerMetricsBySvrIP(ctx context.Context, arg UpdateSysServerMetricsBySvrIPParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateSysServerMetricsBySvrIP,
+		arg.CpuUsage,
+		arg.MemUsage,
+		arg.SvrStatus,
+		arg.SvrIP,
 	)
 }
 

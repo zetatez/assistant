@@ -20,7 +20,9 @@ SELECT
   svr_ip,
   ak,
   sk,
-  svr_status
+  svr_status,
+  cpu_usage,
+  mem_usage
 FROM sys_server
 WHERE id = ?
 LIMIT 1;
@@ -34,7 +36,9 @@ SELECT
   svr_ip,
   ak,
   sk,
-  svr_status
+  svr_status,
+  cpu_usage,
+  mem_usage
 FROM sys_server
 ORDER BY id DESC
 LIMIT ? OFFSET ?;
@@ -48,7 +52,9 @@ SELECT
   svr_ip,
   ak,
   sk,
-  svr_status
+  svr_status,
+  cpu_usage,
+  mem_usage
 FROM sys_server
 WHERE idc = ?
 ORDER BY id DESC
@@ -63,7 +69,9 @@ SELECT
   svr_ip,
   ak,
   sk,
-  svr_status
+  svr_status,
+  cpu_usage,
+  mem_usage
 FROM sys_server
 WHERE svr_ip like ?
 ORDER BY id DESC
@@ -78,12 +86,22 @@ SELECT
   svr_ip,
   ak,
   sk,
-  svr_status
+  svr_status,
+  cpu_usage,
+  mem_usage
 FROM sys_server
 WHERE idc like ?
   AND svr_ip like ?
 ORDER BY id DESC
 LIMIT ? OFFSET ?;
+
+-- name: UpdateSysServerMetricsBySvrIP :execresult
+UPDATE sys_server
+SET cpu_usage = ?,
+    mem_usage = ?,
+    svr_status = ?
+WHERE svr_ip = ?
+LIMIT 1;
 
 -- name: UpdateSysServer :execresult
 UPDATE sys_server
