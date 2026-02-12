@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS sys_user (
   user_name VARCHAR(255) NOT NULL DEFAULT '',
   password VARCHAR(255) NOT NULL DEFAULT '',
   email VARCHAR(128) NOT NULL DEFAULT '',
+  is_internal TINYINT NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   UNIQUE KEY uk_user_name (user_name),
   UNIQUE KEY uk_email (email)

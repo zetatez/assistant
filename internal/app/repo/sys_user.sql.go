@@ -22,8 +22,8 @@ func (q *Queries) CountSysUsers(ctx context.Context) (int64, error) {
 }
 
 const createSysUser = `-- name: CreateSysUser :execresult
-INSERT INTO sys_user (user_name, password, email)
-VALUES (?, ?, ?)
+INSERT INTO sys_user (user_name, password, email, is_internal)
+VALUES (?, ?, ?, 0)
 `
 
 type CreateSysUserParams struct {
@@ -53,7 +53,8 @@ SELECT
   gmt_modified,
   user_name,
   password,
-  email
+  email,
+  is_internal
 FROM sys_user
 WHERE id = ?
 LIMIT 1
@@ -69,6 +70,7 @@ func (q *Queries) GetSysUserByID(ctx context.Context, id int64) (SysUser, error)
 		&i.UserName,
 		&i.Password,
 		&i.Email,
+		&i.IsInternal,
 	)
 	return i, err
 }
@@ -80,7 +82,8 @@ SELECT
   gmt_modified,
   user_name,
   password,
-  email
+  email,
+  is_internal
 FROM sys_user
 ORDER BY id DESC
 LIMIT ? OFFSET ?
@@ -107,6 +110,7 @@ func (q *Queries) ListSysUsers(ctx context.Context, arg ListSysUsersParams) ([]S
 			&i.UserName,
 			&i.Password,
 			&i.Email,
+			&i.IsInternal,
 		); err != nil {
 			return nil, err
 		}
@@ -128,7 +132,8 @@ SELECT
   gmt_modified,
   user_name,
   password,
-  email
+  email,
+  is_internal
 FROM sys_user
 WHERE email like ?
 ORDER BY id DESC
@@ -157,6 +162,7 @@ func (q *Queries) SearchSysUsersByEmail(ctx context.Context, arg SearchSysUsersB
 			&i.UserName,
 			&i.Password,
 			&i.Email,
+			&i.IsInternal,
 		); err != nil {
 			return nil, err
 		}
@@ -178,7 +184,8 @@ SELECT
   gmt_modified,
   user_name,
   password,
-  email
+  email,
+  is_internal
 FROM sys_user
 WHERE user_name like ?
 ORDER BY id DESC
@@ -207,6 +214,7 @@ func (q *Queries) SearchSysUsersByUserName(ctx context.Context, arg SearchSysUse
 			&i.UserName,
 			&i.Password,
 			&i.Email,
+			&i.IsInternal,
 		); err != nil {
 			return nil, err
 		}

@@ -133,10 +133,15 @@ func sysUserExists(ctx context.Context, username string) (bool, error) {
 	return true, nil
 }
 
+func defaultUserEmail(username string) string {
+	return fmt.Sprintf("%s@localhost", username)
+}
+
 type SysUser struct {
-	Username string
-	Password string
-	Email    string
+	Username   string
+	Password   string
+	Email      string
+	IsInternal bool
 }
 
 func createSysUser(ctx context.Context, u SysUser) (bool, error) {
@@ -149,6 +154,11 @@ func createSysUser(ctx context.Context, u SysUser) (bool, error) {
 		return false, err
 	}
 	if exists {
+		if u.IsInternal {
+			if _, err := GetDB().ExecContext(ctx, "UPDATE sys_user SET is_internal = 1 WHERE user_name = ?", u.Username); err != nil {
+				return false, fmt.Errorf("mark user '%s' internal: %w", u.Username, err)
+			}
+		}
 		return false, nil
 	}
 
@@ -157,8 +167,8 @@ func createSysUser(ctx context.Context, u SysUser) (bool, error) {
 		return false, fmt.Errorf("hash password: %w", err)
 	}
 
-	const dml = "INSERT IGNORE INTO sys_user (user_name, password, email) VALUES (?, ?, ?)"
-	result, err := GetDB().ExecContext(ctx, dml, u.Username, password, u.Email)
+	const dml = "INSERT IGNORE INTO sys_user (user_name, password, email, is_internal) VALUES (?, ?, ?, ?)"
+	result, err := GetDB().ExecContext(ctx, dml, u.Username, password, u.Email, u.IsInternal)
 	if err != nil {
 		return false, fmt.Errorf("insert user: %w", err)
 	}
@@ -188,11 +198,16 @@ func initDefaultUsers(ctx context.Context) error {
 	if adminUser.Password == "" {
 		adminUser.Password = "AAaa00__"
 	}
+	if adminUser.Email == "" {
+		adminUser.Email = defaultUserEmail(adminUser.Username)
+	}
+	adminUser.IsInternal = true
 
 	guestUser := SysUser{
-		Username: "guest",
-		Password: "guest",
-		Email:    "guest@local",
+		Username:   "guest",
+		Password:   "guest",
+		Email:      defaultUserEmail("guest"),
+		IsInternal: true,
 	}
 
 	users := []SysUser{adminUser, guestUser}

@@ -3,6 +3,7 @@ package sys_user
 import (
 	"assistant/internal/app/repo"
 	"assistant/pkg/response"
+	"database/sql"
 	"net/http"
 	"strconv"
 
@@ -84,6 +85,15 @@ func (h *SysUserHandler) DeleteSysUserByID(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		response.Err(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if u, err := h.svc.GetSysUserByID(c, id); err == nil {
+		if u.IsInternal == 1 {
+			response.Err(c, response.CodeForbidden, "cannot delete internal default user")
+			return
+		}
+	} else if err != sql.ErrNoRows {
+		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	data, err := h.svc.DeleteSysUserByID(c, id)

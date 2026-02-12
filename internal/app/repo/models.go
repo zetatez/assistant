@@ -73,6 +73,7 @@ type SysUser struct {
 	UserName    string    `json:"user_name"`
 	Password    string    `json:"password"`
 	Email       string    `json:"email"`
+	IsInternal  int8      `json:"is_internal"`
 }
 
 // 代办事项表

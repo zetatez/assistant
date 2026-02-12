@@ -1,7 +1,7 @@
 
 -- name: CreateSysUser :execresult
-INSERT INTO sys_user (user_name, password, email)
-VALUES (?, ?, ?);
+INSERT INTO sys_user (user_name, password, email, is_internal)
+VALUES (?, ?, ?, 0);
 
 -- name: DeleteSysUserByID :execresult
 DELETE FROM sys_user
@@ -18,7 +18,8 @@ SELECT
   gmt_modified,
   user_name,
   password,
-  email
+  email,
+  is_internal
 FROM sys_user
 WHERE id = ?
 LIMIT 1;
@@ -30,7 +31,8 @@ SELECT
   gmt_modified,
   user_name,
   password,
-  email
+  email,
+  is_internal
 FROM sys_user
 ORDER BY id DESC
 LIMIT ? OFFSET ?;
@@ -42,7 +44,8 @@ SELECT
   gmt_modified,
   user_name,
   password,
-  email
+  email,
+  is_internal
 FROM sys_user
 WHERE user_name like ?
 ORDER BY id DESC
@@ -55,7 +58,8 @@ SELECT
   gmt_modified,
   user_name,
   password,
-  email
+  email,
+  is_internal
 FROM sys_user
 WHERE email like ?
 ORDER BY id DESC
@@ -68,4 +72,3 @@ SET user_name = ?,
         email = ?
 WHERE id = ?
 LIMIT 1;
-
