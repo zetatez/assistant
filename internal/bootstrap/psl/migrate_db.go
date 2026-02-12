@@ -24,7 +24,7 @@ func MigrateDB(ctx context.Context) error {
 		return err
 	}
 
-	if err := initAdmin(ctx); err != nil {
+	if err := initDefaultUsers(ctx); err != nil {
 		return err
 	}
 
@@ -120,7 +120,7 @@ func alreadyApplied(ctx context.Context, commitID string) (bool, error) {
 	return true, nil
 }
 
-func adminUserExists(ctx context.Context, username string) (bool, error) {
+func userExists(ctx context.Context, username string) (bool, error) {
 	const q = "SELECT 1 FROM sys_user WHERE user_name = ? LIMIT 1"
 	var one int
 	err := GetDB().QueryRowContext(ctx, q, username).Scan(&one)
@@ -133,7 +133,7 @@ func adminUserExists(ctx context.Context, username string) (bool, error) {
 	return true, nil
 }
 
-func initAdmin(ctx context.Context) error {
+func initDefaultUsers(ctx context.Context) error {
 	logger := GetLogger()
 	logger.Info("initializing admin user...")
 
@@ -147,7 +147,7 @@ func initAdmin(ctx context.Context) error {
 		adminConfig.Password = "AAaa00__"
 	}
 
-	exists, err := adminUserExists(ctx, adminConfig.Username)
+	exists, err := userExists(ctx, adminConfig.Username)
 	if err != nil {
 		return err
 	}
