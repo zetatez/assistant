@@ -19,7 +19,16 @@ func InitDB(ctx context.Context) error {
 	var initErr error
 	onceDB.Do(func() {
 		var err error
-		db, err = xdb.NewDBPool(ctx, GetConfig().DB)
+		cfg := GetConfig().DB
+		poolCfg := xdb.DBPoolConfig{
+			DriverName:      cfg.Driver,
+			DSN:             cfg.DSN,
+			MaxOpenConns:    cfg.Pool.MaxOpenConns,
+			MaxIdleConns:    cfg.Pool.MaxIdleConns,
+			ConnMaxLifetime: cfg.Pool.ConnMaxLifetime,
+			ConnMaxIdletime: cfg.Pool.ConnMaxIdletime,
+		}
+		db, err = xdb.NewDBPool(ctx, poolCfg)
 		if err != nil {
 			initErr = fmt.Errorf("new db pool: %w", err)
 			return

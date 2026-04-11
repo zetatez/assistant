@@ -9,11 +9,13 @@ const (
 )
 
 type Message struct {
-	Role       Role       `json:"role"`
-	Content    string     `json:"content"`
-	Name       string     `json:"name,omitempty"`
-	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
-	ToolCallID string     `json:"tool_call_id,omitempty"`
+	Role        Role       `json:"role"`
+	Content     string     `json:"content"`
+	Name        string     `json:"name,omitempty"`
+	ToolCalls   []ToolCall `json:"tool_calls,omitempty"`
+	ToolCallID  string     `json:"tool_call_id,omitempty"`
+	ImageBase64 string     `json:"image_base64,omitempty"`
+	ImageURL    string     `json:"image_url,omitempty"`
 }
 
 type ToolCall struct {

@@ -33,67 +33,38 @@ func InitConfig() error {
 }
 
 type Config struct {
-	App      AppConfig        `mapstructure:"app"`
-	DB       xdb.DBPoolConfig `mapstructure:"db"`
-	Dislock  DislockConfig    `mapstructure:"dislock"`
-	Log      xlog.LogConfig   `mapstructure:"log"`
-	LLM      LLMConfig        `mapstructure:"llm"`
-	Channels ChannelsConfig   `mapstructure:"channels"`
-	Tars     TarsConfig       `mapstructure:"tars"`
+	App     AppConfig      `mapstructure:"app"`
+	Auth    AuthConfig     `mapstructure:"auth"`
+	DB      DBConfig       `mapstructure:"db"`
+	Log     xlog.LogConfig `mapstructure:"log"`
+	LLM     LLMConfig      `mapstructure:"llm"`
+	Channel ChannelConfig  `mapstructure:"channel"`
+	Tars    TarsConfig     `mapstructure:"tars"`
+	Monitor MonitorConfig  `mapstructure:"monitor"`
 }
 
 type AppConfig struct {
-	Name string `mapstructure:"name"`
-	Port int64  `mapstructure:"port"`
+	Name      string `mapstructure:"name"`
+	Port      int    `mapstructure:"port"`
+	Interface string `mapstructure:"interface"`
+}
+
+type AuthConfig struct {
 	Root struct {
 		Username string `mapstructure:"username"`
 		Password string `mapstructure:"password"`
 		Email    string `mapstructure:"email"`
 	} `mapstructure:"root"`
-	JWT    JWTConfig    `mapstructure:"jwt"`
-	Feishu FeishuConfig `mapstructure:"feishu"`
+	JWT struct {
+		Secret string `mapstructure:"secret"`
+		Expiry int    `mapstructure:"expiry_hours"`
+	} `mapstructure:"jwt"`
 }
 
-type JWTConfig struct {
-	Secret string `mapstructure:"secret"`
-	Expiry int    `mapstructure:"expiry_hours"`
-}
-
-type FeishuConfig struct {
-	AppID     string `mapstructure:"app_id"`
-	AppSecret string `mapstructure:"app_secret"`
-}
-
-type DislockConfig struct {
-	DefaultTTL int `mapstructure:"default_ttl"`
-	MaxTTL     int `mapstructure:"max_ttl"`
-}
-
-type ChannelConfig struct {
-	Provider string `mapstructure:"provider"`
-}
-
-type ChannelsConfig struct {
-	Feishu FeishuConfig `mapstructure:"feishu"`
-}
-
-type TarsConfig struct {
-	Enabled         bool           `mapstructure:"enabled"`
-	LLMTemperature  float32        `mapstructure:"llm_temperature"`
-	ChannelProvider string         `mapstructure:"channel_provider"`
-	Channels        ChannelsConfig `mapstructure:"channels"`
-	Persona         PersonaConfig  `mapstructure:"persona"`
-	Memory          MemoryConfig   `mapstructure:"memory"`
-}
-
-type MemoryConfig struct {
-	MaxHistory int `mapstructure:"max_history"`
-	MemoryTTL  int `mapstructure:"memory_ttl_minutes"`
-}
-
-type PersonaConfig struct {
-	HumorLevel   int `mapstructure:"humor_level"`
-	HonestyLevel int `mapstructure:"honesty_level"`
+type DBConfig struct {
+	Driver string           `mapstructure:"driver"`
+	DSN    string           `mapstructure:"dsn"`
+	Pool   xdb.DBPoolConfig `mapstructure:"pool"`
 }
 
 type LLMConfig struct {
@@ -105,6 +76,54 @@ type LLMConfig struct {
 	Timeout     int               `mapstructure:"timeout"`
 	MaxTokens   int               `mapstructure:"max_tokens"`
 	Temperature float32           `mapstructure:"temperature"`
+}
+
+type ChannelConfig struct {
+	Provider string       `mapstructure:"provider"`
+	Feishu   FeishuConfig `mapstructure:"feishu"`
+}
+
+type FeishuConfig struct {
+	AppID     string `mapstructure:"app_id"`
+	AppSecret string `mapstructure:"app_secret"`
+}
+
+type TarsConfig struct {
+	Enabled        bool          `mapstructure:"enabled"`
+	LLMTemperature float32       `mapstructure:"llm_temperature"`
+	Persona        PersonaConfig `mapstructure:"persona"`
+	Memory         MemoryConfig  `mapstructure:"memory"`
+	Wiki           WikiConfig    `mapstructure:"wiki"`
+}
+
+type PersonaConfig struct {
+	HumorLevel   int `mapstructure:"humor_level"`
+	HonestyLevel int `mapstructure:"honesty_level"`
+}
+
+type MemoryConfig struct {
+	MaxHistory int `mapstructure:"max_history"`
+	TTLMinutes int `mapstructure:"ttl_minutes"`
+}
+
+type WikiConfig struct {
+	Enabled bool   `mapstructure:"enabled"`
+	Dir     string `mapstructure:"dir"`
+}
+
+type MonitorConfig struct {
+	Tracing TracingConfig `mapstructure:"tracing"`
+	Metrics MetricsConfig `mapstructure:"metrics"`
+}
+
+type TracingConfig struct {
+	Enabled    bool    `mapstructure:"enabled"`
+	SampleRate float32 `mapstructure:"sample_rate"`
+}
+
+type MetricsConfig struct {
+	Enabled bool   `mapstructure:"enabled"`
+	Path    string `mapstructure:"path"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -121,11 +140,15 @@ func LoadConfig() (*Config, error) {
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("failed unmarshal config: %v", err)
 	}
-	resolveEnvPlaceholder(&cfg.LLM.APIKey)
+	cfg.resolveEnv()
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 	return cfg, nil
+}
+
+func (c *Config) resolveEnv() {
+	resolveEnv(&c.LLM.APIKey)
 }
 
 func (c *Config) Validate() error {
@@ -138,23 +161,11 @@ func (c *Config) Validate() error {
 	if c.DB.DSN == "" {
 		return fmt.Errorf("db.dsn is required")
 	}
-	if c.DB.MaxOpenConns <= 0 {
-		c.DB.MaxOpenConns = 20
+	if c.DB.Pool.MaxOpenConns <= 0 {
+		c.DB.Pool.MaxOpenConns = 20
 	}
-	if c.DB.MaxIdleConns <= 0 {
-		c.DB.MaxIdleConns = 10
-	}
-	if c.Dislock.DefaultTTL <= 0 {
-		c.Dislock.DefaultTTL = 30
-	}
-	if c.Dislock.MaxTTL <= 0 {
-		c.Dislock.MaxTTL = 300
-	}
-	if c.Dislock.MaxTTL < c.Dislock.DefaultTTL {
-		return fmt.Errorf("dislock.max_ttl (%d) must be >= dislock.default_ttl (%d)", c.Dislock.MaxTTL, c.Dislock.DefaultTTL)
-	}
-	if c.App.JWT.Secret == "" {
-		return fmt.Errorf("app.jwt.secret is required")
+	if c.DB.Pool.MaxIdleConns <= 0 {
+		c.DB.Pool.MaxIdleConns = 10
 	}
 	if c.LLM.Provider == "" {
 		return fmt.Errorf("llm.provider is required")
@@ -166,16 +177,13 @@ func (c *Config) Validate() error {
 		c.LLM.MaxTokens = 4096
 	}
 	if c.Tars.Memory.MaxHistory <= 0 {
-		c.Tars.Memory.MaxHistory = 20
+		c.Tars.Memory.MaxHistory = 64
 	}
-	if c.Tars.Memory.MemoryTTL <= 0 {
-		c.Tars.Memory.MemoryTTL = 60
+	if c.Tars.Memory.TTLMinutes <= 0 {
+		c.Tars.Memory.TTLMinutes = 60
 	}
 	if c.Tars.LLMTemperature <= 0 {
 		c.Tars.LLMTemperature = 0.7
-	}
-	if c.Tars.ChannelProvider == "" {
-		c.Tars.ChannelProvider = "feishu"
 	}
 	if c.Tars.Persona.HumorLevel < 0 {
 		c.Tars.Persona.HumorLevel = 0
@@ -189,12 +197,21 @@ func (c *Config) Validate() error {
 	if c.Tars.Persona.HonestyLevel > 100 {
 		c.Tars.Persona.HonestyLevel = 100
 	}
+	if c.Monitor.Tracing.SampleRate <= 0 {
+		c.Monitor.Tracing.SampleRate = 1.0
+	}
+	if c.Monitor.Tracing.SampleRate > 1 {
+		c.Monitor.Tracing.SampleRate = 1.0
+	}
+	if c.Monitor.Metrics.Path == "" {
+		c.Monitor.Metrics.Path = "/metrics"
+	}
 	return nil
 }
 
 var envPlaceholder = regexp.MustCompile(`\$\{(\w+)\}`)
 
-func resolveEnvPlaceholder(val *string) {
+func resolveEnv(val *string) {
 	if val == nil || *val == "" {
 		return
 	}
@@ -217,8 +234,4 @@ func ResolveEnvPlaceholderStr(val string) string {
 
 func (c *LLMConfig) GetAPIKey() string {
 	return ResolveEnvPlaceholderStr(c.APIKey)
-}
-
-func (c *LLMConfig) AfterMerge() {
-	c.APIKey = ResolveEnvPlaceholderStr(c.APIKey)
 }

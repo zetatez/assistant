@@ -72,7 +72,7 @@ func (h *SysUserHandler) Login(c *gin.Context) {
 		response.ErrWithInternal(c, response.CodeServerError, "login failed", err)
 		return
 	}
-	token, err := middleware.GenerateToken(psl.GetConfig().App.JWT.Secret, user.ID, user.UserName, psl.GetConfig().App.JWT.Expiry)
+	token, err := middleware.GenerateToken(psl.GetConfig().Auth.JWT.Secret, user.ID, user.UserName, psl.GetConfig().Auth.JWT.Expiry)
 	if err != nil {
 		response.ErrWithInternal(c, response.CodeServerError, "failed to generate token", err)
 		return

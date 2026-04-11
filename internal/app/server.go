@@ -8,16 +8,17 @@ import (
 
 	_ "assistant/docs"
 	"assistant/internal/app/module"
+	"assistant/internal/app/modules/chat"
 	"assistant/internal/app/modules/health"
-	"assistant/internal/app/modules/sys_distributed_locker"
 	"assistant/internal/app/modules/sys_server"
 	"assistant/internal/app/modules/sys_user"
 	"assistant/internal/app/modules/tars"
-	"assistant/internal/app/modules/wiki"
 	"assistant/internal/bootstrap/psl"
 	"assistant/pkg/channel"
 	channel_feishu "assistant/pkg/channel/feishu"
 	"assistant/pkg/middleware"
+	"assistant/pkg/monitor/metrics"
+	"assistant/pkg/tracing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -28,10 +29,10 @@ import (
 const APIVersion = "v1"
 
 func createChannel(cfg *psl.Config) (channel.Channel, error) {
-	provider := cfg.Tars.ChannelProvider
+	provider := cfg.Channel.Provider
 	switch provider {
 	case "feishu":
-		feishuCfg := cfg.Channels.Feishu
+		feishuCfg := cfg.Channel.Feishu
 		if feishuCfg.AppID == "" || feishuCfg.AppSecret == "" {
 			return nil, fmt.Errorf("feishu app_id or app_secret is empty")
 		}
@@ -42,35 +43,24 @@ func createChannel(cfg *psl.Config) (channel.Channel, error) {
 }
 
 func setupChannel(botChannel channel.Channel, cfg *psl.Config, logger *logrus.Logger) {
+	logger.Info("setupChannel: entered")
 	if !cfg.Tars.Enabled || botChannel == nil {
+		logger.Info("setupChannel: early return")
 		return
 	}
-
-	elector := psl.GetLeaderElector()
-	if elector == nil {
-		return
-	}
-
-	elector.OnLeaderChanged(func(isLeader bool) {
-		if isLeader {
-			logger.Infof("[server] this node became leader, starting channel listener")
-			go func() {
-				if err := botChannel.StartListening(context.Background()); err != nil {
-					logger.Errorf("[server] channel listener error: %v", err)
-				}
-			}()
-		} else {
-			logger.Infof("[server] this node lost leadership, stopping channel listener")
-			botChannel.StopListening()
+	logger.Info("setupChannel: starting listener goroutine")
+	go func() {
+		logger.Info("tars: starting channel listener")
+		if err := botChannel.StartListening(context.Background()); err != nil {
+			logger.Errorf("tars: channel listener error: %v", err)
 		}
-	})
+		logger.Info("tars: channel listener goroutine ended")
+	}()
+	logger.Info("setupChannel: goroutine launched, returning")
 }
 
 func shutdown(botChannel channel.Channel) {
 	middleware.StopLimiter()
-	if elector := psl.GetLeaderElector(); elector != nil {
-		elector.Stop()
-	}
 	if botChannel != nil {
 		botChannel.StopListening()
 	}
@@ -78,13 +68,24 @@ func shutdown(botChannel channel.Channel) {
 
 func Run(ctx context.Context) error {
 	logger := psl.GetLogger()
+	cfg := psl.GetConfig()
+
+	tracing.Init(cfg.Monitor.Tracing.Enabled, cfg.Monitor.Tracing.SampleRate)
 
 	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(tracing.Middleware())
+	r.Use(metrics.Middleware())
 
 	r.POST("/auth/login", sys_user.NewAuthHandler().Login)
 
-	cfg := psl.GetConfig()
+	if cfg.Monitor.Metrics.Enabled {
+		r.GET(cfg.Monitor.Metrics.Path, func(c *gin.Context) {
+			c.Header("Content-Type", "text/plain")
+			c.String(200, metrics.FormatPrometheus())
+		})
+	}
 
 	botChannel, err := createChannel(cfg)
 	if err != nil {
@@ -96,10 +97,9 @@ func Run(ctx context.Context) error {
 
 	modules := []module.Module{
 		health.NewHealthModule(),
-		sys_distributed_locker.NewSysDistributedLockModule(),
 		sys_server.NewSysServerModule(),
 		sys_user.NewSysUserModule(),
-		wiki.NewWikiModule(),
+		chat.NewChatModule(),
 	}
 
 	if cfg.Tars.Enabled && botChannel != nil {
@@ -146,6 +146,7 @@ func Run(ctx context.Context) error {
 		shutdown(botChannel)
 		return srv.Shutdown(shutdownCtx)
 	case err := <-errCh:
+		logger.WithFields(map[string]interface{}{"reason": err.Error()}).Info("server error received")
 		shutdown(botChannel)
 		return err
 	}

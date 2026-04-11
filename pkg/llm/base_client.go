@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -70,7 +71,7 @@ func (c *BaseClient) Do(ctx context.Context, method, path string, body any, head
 
 		if resp.StatusCode >= 500 || resp.StatusCode == 429 {
 			resp.Body.Close()
-			lastErr = &HTTPError{Code: resp.StatusCode, Message: "server error"}
+			lastErr = &HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("server error: %d", resp.StatusCode)}
 			continue
 		}
 

@@ -12,6 +12,16 @@ import (
 	"assistant/pkg/llm"
 )
 
+type imageURLContent struct {
+	URL string `json:"url"`
+}
+
+type messageContent struct {
+	Type     string           `json:"type"`
+	Text     string           `json:"text,omitempty"`
+	ImageURL *imageURLContent `json:"image_url,omitempty"`
+}
+
 type Client struct {
 	apiKey  string
 	baseURL string
@@ -50,9 +60,11 @@ func (c *Client) Capabilities() llm.Capabilities {
 }
 
 func (c *Client) Chat(ctx context.Context, req llm.ChatRequest) (*llm.ChatResponse, error) {
+	messages := convertMessages(req.Messages)
+
 	payload := map[string]any{
 		"model":       c.getModel(req.Model),
-		"messages":    req.Messages,
+		"messages":    messages,
 		"temperature": req.Temperature,
 	}
 
@@ -195,4 +207,26 @@ func (c *Client) getModel(model string) string {
 		return model
 	}
 	return c.model
+}
+
+func convertMessages(msgs []llm.Message) []map[string]any {
+	result := make([]map[string]any, 0, len(msgs))
+	for _, m := range msgs {
+		if m.ImageBase64 != "" {
+			content := []messageContent{
+				{Type: "text", Text: m.Content},
+				{Type: "image_url", ImageURL: &imageURLContent{URL: "data:image/jpeg;base64," + m.ImageBase64}},
+			}
+			result = append(result, map[string]any{
+				"role":    m.Role,
+				"content": content,
+			})
+		} else {
+			result = append(result, map[string]any{
+				"role":    m.Role,
+				"content": m.Content,
+			})
+		}
+	}
+	return result
 }

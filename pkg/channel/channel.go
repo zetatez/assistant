@@ -3,7 +3,7 @@ package channel
 import "context"
 
 type MessageEvent struct {
-	ChatID    string
+	SessionID string
 	OpenID    string
 	MsgType   string
 	Content   string
@@ -12,7 +12,8 @@ type MessageEvent struct {
 
 type Channel interface {
 	Name() string
-	SendMessage(ctx context.Context, chatID, msgType, content string) error
+	SendMessage(ctx context.Context, sessionID, msgType, content string) error
+	DownloadMedia(ctx context.Context, messageID, fileKey string) ([]byte, string, error)
 	StartListening(ctx context.Context) error
 	StopListening()
 	SetMessageHandler(handler MessageHandler)

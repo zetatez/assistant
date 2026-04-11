@@ -256,7 +256,7 @@ func initDefaultUsers(ctx context.Context) error {
 		return fmt.Errorf("config is nil: InitConfig() must be called before MigrateDB()")
 	}
 
-	adminConfig := cfg.App.Root
+	adminConfig := cfg.Auth.Root
 
 	adminUser := SysUser{
 		Username: adminConfig.Username,

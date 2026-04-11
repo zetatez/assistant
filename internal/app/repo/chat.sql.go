@@ -12,25 +12,26 @@ import (
 )
 
 const countChatMessages = `-- name: CountChatMessages :one
-SELECT count(*) FROM chat_messages WHERE chat_id = ?
+SELECT count(*) FROM chat_messages WHERE session_id = ?
 `
 
-func (q *Queries) CountChatMessages(ctx context.Context, chatID string) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countChatMessages, chatID)
+func (q *Queries) CountChatMessages(ctx context.Context, sessionID string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countChatMessages, sessionID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
 const createChatMemory = `-- name: CreateChatMemory :execresult
-INSERT INTO chat_memory (chat_id, keyword, summary, start_time, end_time, message_count, created_at)
-VALUES (?, ?, ?, ?, ?, ?, NOW())
+INSERT INTO chat_memory (session_id, keyword, summary, memory_type, start_time, end_time, message_count, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
 `
 
 type CreateChatMemoryParams struct {
-	ChatID       string        `json:"chat_id"`
+	SessionID    string        `json:"session_id"`
 	Keyword      string        `json:"keyword"`
 	Summary      string        `json:"summary"`
+	MemoryType   string        `json:"memory_type"`
 	StartTime    time.Time     `json:"start_time"`
 	EndTime      time.Time     `json:"end_time"`
 	MessageCount sql.NullInt32 `json:"message_count"`
@@ -38,9 +39,10 @@ type CreateChatMemoryParams struct {
 
 func (q *Queries) CreateChatMemory(ctx context.Context, arg CreateChatMemoryParams) (sql.Result, error) {
 	return q.db.ExecContext(ctx, createChatMemory,
-		arg.ChatID,
+		arg.SessionID,
 		arg.Keyword,
 		arg.Summary,
+		arg.MemoryType,
 		arg.StartTime,
 		arg.EndTime,
 		arg.MessageCount,
@@ -48,12 +50,12 @@ func (q *Queries) CreateChatMemory(ctx context.Context, arg CreateChatMemoryPara
 }
 
 const createChatMessage = `-- name: CreateChatMessage :execresult
-INSERT INTO chat_messages (chat_id, open_id, username, role, content, message_id, created_at)
+INSERT INTO chat_messages (session_id, open_id, username, role, content, message_id, created_at)
 VALUES (?, ?, ?, ?, ?, ?, NOW())
 `
 
 type CreateChatMessageParams struct {
-	ChatID    string         `json:"chat_id"`
+	SessionID string         `json:"session_id"`
 	OpenID    string         `json:"open_id"`
 	Username  sql.NullString `json:"username"`
 	Role      string         `json:"role"`
@@ -63,13 +65,29 @@ type CreateChatMessageParams struct {
 
 func (q *Queries) CreateChatMessage(ctx context.Context, arg CreateChatMessageParams) (sql.Result, error) {
 	return q.db.ExecContext(ctx, createChatMessage,
-		arg.ChatID,
+		arg.SessionID,
 		arg.OpenID,
 		arg.Username,
 		arg.Role,
 		arg.Content,
 		arg.MessageID,
 	)
+}
+
+const deleteChatMemoriesByChatID = `-- name: DeleteChatMemoriesByChatID :execresult
+DELETE FROM chat_memory WHERE session_id = ?
+`
+
+func (q *Queries) DeleteChatMemoriesByChatID(ctx context.Context, sessionID string) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteChatMemoriesByChatID, sessionID)
+}
+
+const deleteChatMessagesByChatID = `-- name: DeleteChatMessagesByChatID :execresult
+DELETE FROM chat_messages WHERE session_id = ?
+`
+
+func (q *Queries) DeleteChatMessagesByChatID(ctx context.Context, sessionID string) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteChatMessagesByChatID, sessionID)
 }
 
 const deleteOldChatMemories = `-- name: DeleteOldChatMemories :execresult
@@ -89,20 +107,20 @@ func (q *Queries) DeleteOldChatMessages(ctx context.Context) (sql.Result, error)
 }
 
 const getChatMemories = `-- name: GetChatMemories :many
-SELECT id, chat_id, keyword, summary, start_time, end_time, message_count, created_at
+SELECT id, session_id, keyword, summary, memory_type, start_time, end_time, message_count, created_at
 FROM chat_memory
-WHERE chat_id = ?
+WHERE session_id = ? AND memory_type != 'session'
 ORDER BY created_at DESC
 LIMIT ?
 `
 
 type GetChatMemoriesParams struct {
-	ChatID string `json:"chat_id"`
-	Limit  int32  `json:"limit"`
+	SessionID string `json:"session_id"`
+	Limit     int32  `json:"limit"`
 }
 
 func (q *Queries) GetChatMemories(ctx context.Context, arg GetChatMemoriesParams) ([]ChatMemory, error) {
-	rows, err := q.db.QueryContext(ctx, getChatMemories, arg.ChatID, arg.Limit)
+	rows, err := q.db.QueryContext(ctx, getChatMemories, arg.SessionID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -112,9 +130,10 @@ func (q *Queries) GetChatMemories(ctx context.Context, arg GetChatMemoriesParams
 		var i ChatMemory
 		if err := rows.Scan(
 			&i.ID,
-			&i.ChatID,
+			&i.SessionID,
 			&i.Keyword,
 			&i.Summary,
+			&i.MemoryType,
 			&i.StartTime,
 			&i.EndTime,
 			&i.MessageCount,
@@ -134,21 +153,21 @@ func (q *Queries) GetChatMemories(ctx context.Context, arg GetChatMemoriesParams
 }
 
 const getChatMessages = `-- name: GetChatMessages :many
-SELECT id, chat_id, open_id, username, role, content, message_id, created_at
+SELECT id, session_id, open_id, username, role, content, message_id, created_at
 FROM chat_messages
-WHERE chat_id = ?
+WHERE session_id = ?
 ORDER BY created_at ASC
 LIMIT ? OFFSET ?
 `
 
 type GetChatMessagesParams struct {
-	ChatID string `json:"chat_id"`
-	Limit  int32  `json:"limit"`
-	Offset int32  `json:"offset"`
+	SessionID string `json:"session_id"`
+	Limit     int32  `json:"limit"`
+	Offset    int32  `json:"offset"`
 }
 
 func (q *Queries) GetChatMessages(ctx context.Context, arg GetChatMessagesParams) ([]ChatMessage, error) {
-	rows, err := q.db.QueryContext(ctx, getChatMessages, arg.ChatID, arg.Limit, arg.Offset)
+	rows, err := q.db.QueryContext(ctx, getChatMessages, arg.SessionID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +177,53 @@ func (q *Queries) GetChatMessages(ctx context.Context, arg GetChatMessagesParams
 		var i ChatMessage
 		if err := rows.Scan(
 			&i.ID,
-			&i.ChatID,
+			&i.SessionID,
+			&i.OpenID,
+			&i.Username,
+			&i.Role,
+			&i.Content,
+			&i.MessageID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getChatMessagesBefore = `-- name: GetChatMessagesBefore :many
+SELECT id, session_id, open_id, username, role, content, message_id, created_at
+FROM chat_messages
+WHERE session_id = ? AND created_at <= ?
+ORDER BY created_at DESC
+LIMIT ?
+`
+
+type GetChatMessagesBeforeParams struct {
+	SessionID string    `json:"session_id"`
+	CreatedAt time.Time `json:"created_at"`
+	Limit     int32     `json:"limit"`
+}
+
+func (q *Queries) GetChatMessagesBefore(ctx context.Context, arg GetChatMessagesBeforeParams) ([]ChatMessage, error) {
+	rows, err := q.db.QueryContext(ctx, getChatMessagesBefore, arg.SessionID, arg.CreatedAt, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ChatMessage{}
+	for rows.Next() {
+		var i ChatMessage
+		if err := rows.Scan(
+			&i.ID,
+			&i.SessionID,
 			&i.OpenID,
 			&i.Username,
 			&i.Role,
@@ -180,20 +245,20 @@ func (q *Queries) GetChatMessages(ctx context.Context, arg GetChatMessagesParams
 }
 
 const getChatMessagesByTimeRange = `-- name: GetChatMessagesByTimeRange :many
-SELECT id, chat_id, open_id, username, role, content, message_id, created_at
+SELECT id, session_id, open_id, username, role, content, message_id, created_at
 FROM chat_messages
-WHERE chat_id = ? AND created_at >= ? AND created_at <= ?
+WHERE session_id = ? AND created_at >= ? AND created_at <= ?
 ORDER BY created_at ASC
 `
 
 type GetChatMessagesByTimeRangeParams struct {
-	ChatID      string    `json:"chat_id"`
+	SessionID   string    `json:"session_id"`
 	CreatedAt   time.Time `json:"created_at"`
 	CreatedAt_2 time.Time `json:"created_at_2"`
 }
 
 func (q *Queries) GetChatMessagesByTimeRange(ctx context.Context, arg GetChatMessagesByTimeRangeParams) ([]ChatMessage, error) {
-	rows, err := q.db.QueryContext(ctx, getChatMessagesByTimeRange, arg.ChatID, arg.CreatedAt, arg.CreatedAt_2)
+	rows, err := q.db.QueryContext(ctx, getChatMessagesByTimeRange, arg.SessionID, arg.CreatedAt, arg.CreatedAt_2)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +268,7 @@ func (q *Queries) GetChatMessagesByTimeRange(ctx context.Context, arg GetChatMes
 		var i ChatMessage
 		if err := rows.Scan(
 			&i.ID,
-			&i.ChatID,
+			&i.SessionID,
 			&i.OpenID,
 			&i.Username,
 			&i.Role,
@@ -224,22 +289,74 @@ func (q *Queries) GetChatMessagesByTimeRange(ctx context.Context, arg GetChatMes
 	return items, nil
 }
 
-const searchChatMemoriesByKeyword = `-- name: SearchChatMemoriesByKeyword :many
-SELECT id, chat_id, keyword, summary, start_time, end_time, message_count, created_at
+const getSessionLatestMemory = `-- name: GetSessionLatestMemory :one
+SELECT id, session_id, keyword, summary, memory_type, start_time, end_time, message_count, created_at
 FROM chat_memory
-WHERE chat_id = ? AND keyword LIKE ?
+WHERE session_id = ? AND memory_type = 'session'
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetSessionLatestMemory(ctx context.Context, sessionID string) (ChatMemory, error) {
+	row := q.db.QueryRowContext(ctx, getSessionLatestMemory, sessionID)
+	var i ChatMemory
+	err := row.Scan(
+		&i.ID,
+		&i.SessionID,
+		&i.Keyword,
+		&i.Summary,
+		&i.MemoryType,
+		&i.StartTime,
+		&i.EndTime,
+		&i.MessageCount,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const listRecentChatIDs = `-- name: ListRecentChatIDs :many
+SELECT DISTINCT session_id FROM chat_messages ORDER BY created_at DESC LIMIT ?
+`
+
+func (q *Queries) ListRecentChatIDs(ctx context.Context, limit int32) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listRecentChatIDs, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var session_id string
+		if err := rows.Scan(&session_id); err != nil {
+			return nil, err
+		}
+		items = append(items, session_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchChatMemoriesByKeyword = `-- name: SearchChatMemoriesByKeyword :many
+SELECT id, session_id, keyword, summary, memory_type, start_time, end_time, message_count, created_at
+FROM chat_memory
+WHERE session_id = ? AND memory_type != 'session' AND keyword LIKE ?
 ORDER BY created_at DESC
 LIMIT ?
 `
 
 type SearchChatMemoriesByKeywordParams struct {
-	ChatID  string `json:"chat_id"`
-	Keyword string `json:"keyword"`
-	Limit   int32  `json:"limit"`
+	SessionID string `json:"session_id"`
+	Keyword   string `json:"keyword"`
+	Limit     int32  `json:"limit"`
 }
 
 func (q *Queries) SearchChatMemoriesByKeyword(ctx context.Context, arg SearchChatMemoriesByKeywordParams) ([]ChatMemory, error) {
-	rows, err := q.db.QueryContext(ctx, searchChatMemoriesByKeyword, arg.ChatID, arg.Keyword, arg.Limit)
+	rows, err := q.db.QueryContext(ctx, searchChatMemoriesByKeyword, arg.SessionID, arg.Keyword, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -249,9 +366,10 @@ func (q *Queries) SearchChatMemoriesByKeyword(ctx context.Context, arg SearchCha
 		var i ChatMemory
 		if err := rows.Scan(
 			&i.ID,
-			&i.ChatID,
+			&i.SessionID,
 			&i.Keyword,
 			&i.Summary,
+			&i.MemoryType,
 			&i.StartTime,
 			&i.EndTime,
 			&i.MessageCount,
@@ -271,21 +389,21 @@ func (q *Queries) SearchChatMemoriesByKeyword(ctx context.Context, arg SearchCha
 }
 
 const searchChatMessagesByKeyword = `-- name: SearchChatMessagesByKeyword :many
-SELECT id, chat_id, open_id, username, role, content, message_id, created_at
+SELECT id, session_id, open_id, username, role, content, message_id, created_at
 FROM chat_messages
-WHERE chat_id = ? AND content LIKE ?
+WHERE session_id = ? AND content LIKE ?
 ORDER BY created_at DESC
 LIMIT ?
 `
 
 type SearchChatMessagesByKeywordParams struct {
-	ChatID  string `json:"chat_id"`
-	Content string `json:"content"`
-	Limit   int32  `json:"limit"`
+	SessionID string `json:"session_id"`
+	Content   string `json:"content"`
+	Limit     int32  `json:"limit"`
 }
 
 func (q *Queries) SearchChatMessagesByKeyword(ctx context.Context, arg SearchChatMessagesByKeywordParams) ([]ChatMessage, error) {
-	rows, err := q.db.QueryContext(ctx, searchChatMessagesByKeyword, arg.ChatID, arg.Content, arg.Limit)
+	rows, err := q.db.QueryContext(ctx, searchChatMessagesByKeyword, arg.SessionID, arg.Content, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +413,7 @@ func (q *Queries) SearchChatMessagesByKeyword(ctx context.Context, arg SearchCha
 		var i ChatMessage
 		if err := rows.Scan(
 			&i.ID,
-			&i.ChatID,
+			&i.SessionID,
 			&i.OpenID,
 			&i.Username,
 			&i.Role,
@@ -314,4 +432,12 @@ func (q *Queries) SearchChatMessagesByKeyword(ctx context.Context, arg SearchCha
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateChatMemoryType = `-- name: UpdateChatMemoryType :execresult
+UPDATE chat_memory SET memory_type = 'historical' WHERE session_id = ? AND memory_type = 'session'
+`
+
+func (q *Queries) UpdateChatMemoryType(ctx context.Context, sessionID string) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateChatMemoryType, sessionID)
 }

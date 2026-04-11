@@ -1,51 +1,70 @@
+# --- App ---
 app:
   name: assistant
   port: 9876
+  interface: wlan0
+
+# --- Auth ---
+auth:
   root:
     username: admin
     password: AAaa00__
-    email: zetatez@icloud.com
+    email: admin@example.com
   jwt:
     secret: your-256-bit-secret-key-here
     expiry_hours: 24
 
+# --- Database ---
+db:
+  driver: mysql
+  dsn: assistant:AAaa00__@tcp(127.0.0.1:3306)/assistant?charset=utf8mb4&parseTime=True&loc=Local
+  pool:
+    max_open_conns: 20
+    max_idle_conns: 10
+    conn_max_lifetime: 1h
+    conn_max_idle_time: 30m
+
+# --- LLM ---
 llm:
   provider: minimax
-  api_key: "${MINIMAX_API_KEY}"
+  api_key: "${LLM_API_KEY}"
   base_url: https://api.minimaxi.com
   model: MiniMax-M2.5
   timeout: 60
   max_tokens: 4096
   temperature: 0.2
 
-channels:
+# --- Channel ---
+channel:
+  provider: feishu
   feishu:
     app_id: ""
     app_secret: ""
 
+# --- Tars AI ---
 tars:
   enabled: true
+  llm_temperature: 0.7
   persona:
     humor_level: 50
     honesty_level: 80
   memory:
-    max_history: 30
-    memory_ttl_minutes: 60
-  llm_temperature: 0.7
-  channel_provider: feishu
+    max_history: 64
+    ttl_minutes: 60
+  wiki:
+    enabled: true
+    dir: ~/share/github/obsidian/
 
-db:
-  driver_name: mysql
-  dsn: assistant:AAaa00__@tcp(127.0.0.1:3306)/assistant?charset=utf8mb4&parseTime=True&loc=Local
-  max_open_conns: 20
-  max_idle_conns: 10
-  conn_max_life_time: 1h
-  conn_max_idle_time: 30m
+# --- Monitor ---
+monitor:
+  tracing:
+    enabled: true
+    sample_rate: 1.0
+  metrics:
+    enabled: true
+    path: /metrics
 
-dislock:
-  default_ttl: 30
-  max_ttl: 300
-
+# --- Log ---
 log:
   level: debug
   filename: ./logs/assistant.log
@@ -53,5 +72,5 @@ log:
   max_backups: 7
   max_age_days: 14
   compress: true
-  json_format: true
-  console: false
+  format: text
+  console: true

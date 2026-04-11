@@ -32,7 +32,7 @@ func (m *SysUserModule) Register(r *gin.RouterGroup) {
 
 func (m *SysUserModule) Middleware() []gin.HandlerFunc {
 	return []gin.HandlerFunc{
-		middleware.AuthRequired(psl.GetConfig().App.JWT.Secret),
+		middleware.AuthRequired(psl.GetConfig().Auth.JWT.Secret),
 	}
 }
 

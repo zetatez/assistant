@@ -26,6 +26,6 @@ func (m *SysServerModule) Register(r *gin.RouterGroup) {
 
 func (m *SysServerModule) Middleware() []gin.HandlerFunc {
 	return []gin.HandlerFunc{
-		middleware.AuthRequired(psl.GetConfig().App.JWT.Secret),
+		middleware.AuthRequired(psl.GetConfig().Auth.JWT.Secret),
 	}
 }

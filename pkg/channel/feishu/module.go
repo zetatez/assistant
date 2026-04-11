@@ -23,8 +23,12 @@ func (m *Module) Name() string {
 	return m.service.Name()
 }
 
-func (m *Module) SendMessage(ctx context.Context, chatID, msgType, content string) error {
-	return m.service.SendMessage(ctx, chatID, msgType, content)
+func (m *Module) SendMessage(ctx context.Context, sessionID, msgType, content string) error {
+	return m.service.SendMessage(ctx, sessionID, msgType, content)
+}
+
+func (m *Module) DownloadMedia(ctx context.Context, messageID, fileKey string) ([]byte, string, error) {
+	return m.service.DownloadMedia(ctx, messageID, fileKey)
 }
 
 func (m *Module) StartListening(ctx context.Context) error {

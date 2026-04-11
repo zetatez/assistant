@@ -22,6 +22,13 @@ type DBPoolConfig struct {
 	PingTimeout     time.Duration `mapstructure:"ping_timeout"`
 }
 
+type PoolConfig struct {
+	MaxOpen     int           `mapstructure:"max_open"`
+	MaxIdle     int           `mapstructure:"max_idle"`
+	MaxLife     time.Duration `mapstructure:"max_life"`
+	MaxIdleTime time.Duration `mapstructure:"max_idle_time"`
+}
+
 func NewDBPool(ctx context.Context, cfg DBPoolConfig) (*sql.DB, error) {
 	db, err := sql.Open(cfg.DriverName, cfg.DSN)
 	if err != nil {

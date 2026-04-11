@@ -12,6 +12,11 @@ import (
 	"assistant/pkg/llm"
 )
 
+type minimaxContentBlock struct {
+	Text     string `json:"text,omitempty"`
+	ImageURL string `json:"image_url,omitempty"`
+}
+
 type Client struct {
 	apiKey  string
 	baseURL string
@@ -55,9 +60,11 @@ func (c *Client) Capabilities() llm.Capabilities {
 }
 
 func (c *Client) Chat(ctx context.Context, req llm.ChatRequest) (*llm.ChatResponse, error) {
+	messages := convertMessages(req.Messages)
+
 	payload := map[string]any{
 		"model":              c.getModel(req.Model),
-		"messages":           req.Messages,
+		"messages":           messages,
 		"temperature":        req.Temperature,
 		"tokens_to_generate": 4096,
 	}
@@ -225,4 +232,49 @@ func (c *Client) getModel(model string) string {
 		return model
 	}
 	return c.model
+}
+
+func convertMessages(msgs []llm.Message) []map[string]any {
+	result := make([]map[string]any, 0, len(msgs))
+	var systemPrompt string
+
+	for _, m := range msgs {
+		if m.Role == llm.RoleSystem {
+			systemPrompt += m.Content + "\n\n"
+			continue
+		}
+
+		role := "user"
+		if m.Role == llm.RoleAI {
+			role = "assistant"
+		}
+
+		if m.ImageBase64 != "" {
+			content := []minimaxContentBlock{
+				{Text: m.Content},
+				{ImageURL: "data:image/jpeg;base64," + m.ImageBase64},
+			}
+			result = append(result, map[string]any{
+				"role":    role,
+				"content": content,
+			})
+		} else {
+			result = append(result, map[string]any{
+				"role":    role,
+				"content": m.Content,
+			})
+		}
+	}
+
+	if systemPrompt != "" && len(result) > 0 {
+		firstMsg := result[0]
+		if blocks, ok := firstMsg["content"].([]minimaxContentBlock); ok {
+			blocks[0].Text = systemPrompt + blocks[0].Text
+			firstMsg["content"] = blocks
+		} else if text, ok := firstMsg["content"].(string); ok {
+			firstMsg["content"] = systemPrompt + text
+		}
+	}
+
+	return result
 }

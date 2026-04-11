@@ -16,7 +16,7 @@ type LogConfig struct {
 	MaxBackups int    `mapstructure:"max_backups"`
 	MaxAgeDays int    `mapstructure:"max_age_days"`
 	Compress   bool   `mapstructure:"compress"`
-	JSONFormat bool   `mapstructure:"json_format"`
+	Format     string `mapstructure:"format"`
 	Console    bool   `mapstructure:"console"`
 }
 
@@ -29,7 +29,7 @@ func NewLogger(cfg LogConfig) (*logrus.Logger, error) {
 	}
 	logger.SetLevel(level)
 
-	if cfg.JSONFormat {
+	if cfg.Format == "json" {
 		logger.SetFormatter(
 			&logrus.JSONFormatter{TimestampFormat: time.RFC3339},
 		)

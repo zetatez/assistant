@@ -2,6 +2,8 @@ package feishu
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -57,6 +59,7 @@ func NewService(appID, appSecret string, opts ...ServiceOption) *Service {
 
 	if s.logger == nil {
 		s.logger = logrus.New()
+		s.logger.SetLevel(logrus.WarnLevel)
 	}
 
 	return s
@@ -64,11 +67,11 @@ func NewService(appID, appSecret string, opts ...ServiceOption) *Service {
 
 func (s *Service) Name() string { return "feishu" }
 
-func (s *Service) SendMessage(ctx context.Context, chatID, msgType, content string) error {
+func (s *Service) SendMessage(ctx context.Context, sessionID, msgType, content string) error {
 	createReq := larkim.NewCreateMessageReqBuilder().
 		ReceiveIdType("chat_id").
 		Body(larkim.NewCreateMessageReqBodyBuilder().
-			ReceiveId(chatID).
+			ReceiveId(sessionID).
 			MsgType(msgType).
 			Content(content).
 			Build()).
@@ -137,7 +140,7 @@ func (s *Service) StartListening(ctx context.Context) error {
 					return nil
 				}
 				s.dispatchEvent(&channel.MessageEvent{
-					ChatID:    derefString(msg.ChatId),
+					SessionID: derefString(msg.ChatId),
 					OpenID:    derefString(event.Event.Sender.SenderId.OpenId),
 					MsgType:   derefString(msg.MessageType),
 					Content:   derefString(msg.Content),
@@ -151,6 +154,7 @@ func (s *Service) StartListening(ctx context.Context) error {
 
 	cli := larkws.NewClient(s.appID, s.appSecret,
 		larkws.WithEventHandler(eventHandler),
+		larkws.WithAutoReconnect(false),
 	)
 
 	s.wsMu.Lock()
@@ -162,14 +166,13 @@ func (s *Service) StartListening(ctx context.Context) error {
 
 func (s *Service) StopListening() {
 	s.wsMu.Lock()
-	defer s.wsMu.Unlock()
-
-	if s.wsClient == nil || s.wsStopped {
+	if s.wsStopped {
+		s.wsMu.Unlock()
 		return
 	}
-
-	s.logger.Infof("[feishu] stopping WebSocket listener")
 	s.wsStopped = true
+	s.wsMu.Unlock()
+
 	close(s.wsStopCh)
 }
 
@@ -210,4 +213,28 @@ func derefString(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+func (s *Service) DownloadMedia(ctx context.Context, messageID, fileKey string) ([]byte, string, error) {
+	getReq := larkim.NewGetMessageResourceReqBuilder().
+		MessageId(messageID).
+		FileKey(fileKey).
+		Type("file").
+		Build()
+
+	resp, err := s.client.Im.V1.MessageResource.Get(ctx, getReq)
+	if err != nil {
+		return nil, "", err
+	}
+
+	if !resp.Success() {
+		return nil, "", fmt.Errorf("feishu api error: %s", resp.Error())
+	}
+
+	data, err := io.ReadAll(resp.File)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return data, resp.FileName, nil
 }

@@ -9,15 +9,57 @@ import (
 	"time"
 )
 
+type ChatEntity struct {
+	ID        int64  `json:"id"`
+	SessionID string `json:"session_id"`
+	// person/topic/concept/event
+	EntityType string `json:"entity_type"`
+	EntityName string `json:"entity_name"`
+	// LLM generated description
+	Description sql.NullString `json:"description"`
+	Keywords    sql.NullString `json:"keywords"`
+	CreatedAt   sql.NullTime   `json:"created_at"`
+	UpdatedAt   sql.NullTime   `json:"updated_at"`
+}
+
+type ChatKnowledge struct {
+	ID        int64  `json:"id"`
+	SessionID string `json:"session_id"`
+	// linked entity
+	EntityID sql.NullInt64 `json:"entity_id"`
+	Title    string        `json:"title"`
+	// Markdown format content
+	Content string `json:"content"`
+	// source message IDs, comma separated
+	SourceMessages sql.NullString `json:"source_messages"`
+	Version        sql.NullInt32  `json:"version"`
+	// pending LLM confirmation
+	IsDraft   sql.NullBool `json:"is_draft"`
+	CreatedAt sql.NullTime `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
+}
+
+type ChatLog struct {
+	ID        int64  `json:"id"`
+	SessionID string `json:"session_id"`
+	// ingest/query/lint/update
+	Action string `json:"action"`
+	// JSON format detail
+	Detail    sql.NullString `json:"detail"`
+	CreatedAt sql.NullTime   `json:"created_at"`
+}
+
 // 对话长期记忆摘要表
 type ChatMemory struct {
 	ID int64 `json:"id"`
 	// 会话ID
-	ChatID string `json:"chat_id"`
+	SessionID string `json:"session_id"`
 	// 提取的关键词
 	Keyword string `json:"keyword"`
 	// 对话摘要
 	Summary string `json:"summary"`
+	// memory type: session/latest/historical
+	MemoryType string `json:"memory_type"`
 	// 对话时间段开始
 	StartTime time.Time `json:"start_time"`
 	// 对话时间段结束
@@ -28,11 +70,24 @@ type ChatMemory struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// 会话记忆文档表
+type ChatMemoryDoc struct {
+	ID int64 `json:"id"`
+	// 会话ID
+	SessionID string `json:"session_id"`
+	// 记忆文档内容(Markdown)
+	Content string `json:"content"`
+	// 版本号
+	Version   int32     `json:"version"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 // 对话消息记录表
 type ChatMessage struct {
 	ID int64 `json:"id"`
 	// 会话ID
-	ChatID string `json:"chat_id"`
+	SessionID string `json:"session_id"`
 	// 用户openid
 	OpenID string `json:"open_id"`
 	// 用户名
@@ -47,21 +102,42 @@ type ChatMessage struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// 分布式锁表
-type SysDistributedLock struct {
-	ID          int64     `json:"id"`
-	GmtCreate   time.Time `json:"gmt_create"`
-	GmtModified time.Time `json:"gmt_modified"`
-	// 锁的唯一标识
-	LockKey string `json:"lock_key"`
-	// 锁持有者标识，用于验证所有权
-	LockHolder string `json:"lock_holder"`
-	// 锁的存活时间（秒），0表示不过期
-	LockTtl int32 `json:"lock_ttl"`
-	// 锁过期时间
-	ExpireTime time.Time `json:"expire_time"`
-	// 锁是否激活：1=激活，0=已释放或过期
-	IsActive int8 `json:"is_active"`
+// 历史聊天召回记录表
+type ChatRecall struct {
+	ID int64 `json:"id"`
+	// 会话ID
+	SessionID string `json:"session_id"`
+	// 用户查询关键词
+	Query string `json:"query"`
+	// 召回的历史内容
+	RecalledContent string `json:"recalled_content"`
+	// 相关性评分
+	RelevanceScore sql.NullFloat64 `json:"relevance_score"`
+	CreatedAt      time.Time       `json:"created_at"`
+}
+
+type ChatRelation struct {
+	ID           int64  `json:"id"`
+	SessionID    string `json:"session_id"`
+	FromEntityID int64  `json:"from_entity_id"`
+	ToEntityID   int64  `json:"to_entity_id"`
+	// related_to/depends_on/contradicts/part_of
+	RelationType string `json:"relation_type"`
+	// context of this relation
+	Context   sql.NullString `json:"context"`
+	CreatedAt sql.NullTime   `json:"created_at"`
+}
+
+type ChatSession struct {
+	ID        int64  `json:"id"`
+	SessionID string `json:"session_id"`
+	// Running session summary
+	Summary sql.NullString `json:"summary"`
+	// JSON array of pending tasks
+	PendingTasks sql.NullString `json:"pending_tasks"`
+	// Important context from conversation
+	Context   sql.NullString `json:"context"`
+	UpdatedAt sql.NullTime   `json:"updated_at"`
 }
 
 // 服务器表
