@@ -36,13 +36,13 @@ llm_proxy:
   timeout: 300
   temperature: 0.3
   providers:
-    - name: google
-      base_url: https://generativelanguage.googleapis.com/v1beta/openai
-      api_key: "${GEMINI_API_KEY}"
-      models:
-        - gemini-3.5-flash
-      plan_type: fixed
-      need_vpn: true
+    # - name: google
+    #   base_url: https://generativelanguage.googleapis.com/v1beta/openai
+    #   api_key: "${GEMINI_API_KEY}"
+    #   models:
+    #     - gemini-3.5-flash
+    #   plan_type: fixed
+    #   need_vpn: true
     - name: ark
       base_url: https://ark.cn-beijing.volces.com/api/plan/v3
       api_key: "${ARK_AGENT_PLAN_API_KEY_ZIWEI}"
