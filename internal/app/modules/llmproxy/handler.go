@@ -115,6 +115,15 @@ func (h *Handler) chatCompletions(c *gin.Context) {
 	normalizeRoles(reqMap)
 
 	model, _ := reqMap["model"].(string)
+	if hasImageInReqMap(reqMap) {
+		proxiedModel := h.svc.Config().ProxiedModel
+		if model == "" || model == proxiedModel {
+			if vm := h.svc.PickVisionModel(); vm != "" {
+				model = vm
+				reqMap["model"] = vm
+			}
+		}
+	}
 	resp, err := h.svc.Forward(c.Request.Context(), reqMap, model)
 	if err != nil {
 		psl.GetLogger().Errorf("llmproxy: %v", err)
@@ -522,4 +531,31 @@ func normalizeRoles(req map[string]interface{}) {
 			msg["role"] = "system"
 		}
 	}
+}
+
+func hasImageInReqMap(req map[string]interface{}) bool {
+	msgs, ok := req["messages"].([]interface{})
+	if !ok {
+		return false
+	}
+	for _, m := range msgs {
+		msg, ok := m.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		content, ok := msg["content"].([]interface{})
+		if !ok {
+			continue
+		}
+		for _, c := range content {
+			block, ok := c.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if t, _ := block["type"].(string); t == "image_url" {
+				return true
+			}
+		}
+	}
+	return false
 }

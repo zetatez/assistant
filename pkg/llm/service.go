@@ -43,6 +43,7 @@ type ProviderConfig struct {
 
 type Config struct {
 	ProxiedModel  string           `mapstructure:"proxied_model"`
+	VisionModels  []string         `mapstructure:"vision_models"`
 	ProbeInterval int              `mapstructure:"probe_interval"`
 	ProxiedAPIKey string           `mapstructure:"proxied_api_key"`
 	Timeout       int              `mapstructure:"timeout"`
@@ -143,6 +144,26 @@ func (s *ProxyService) ActiveProvider() *ProviderConfig {
 		return nil
 	}
 	return &s.active.ProviderConfig
+}
+
+func (s *ProxyService) PickVisionModel() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	now := time.Now()
+	for _, vm := range s.config.VisionModels {
+		for _, p := range s.providers {
+			if p.status == StatusExhausted || p.status == StatusOffline {
+				continue
+			}
+			if now.Before(p.rateLimitedUntil) {
+				continue
+			}
+			if slices.Contains(p.Models, vm) {
+				return vm
+			}
+		}
+	}
+	return ""
 }
 
 func (s *ProxyService) ProviderStatuses() []map[string]interface{} {

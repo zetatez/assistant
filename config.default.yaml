@@ -35,6 +35,8 @@ llm_proxy:
   probe_interval: 30
   timeout: 300
   temperature: 0.3
+  vision_models:
+    - minimax-m3
   providers:
     - name: google
       base_url: https://generativelanguage.googleapis.com/v1beta/openai

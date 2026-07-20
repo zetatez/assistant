@@ -35,6 +35,8 @@ llm_proxy:
   probe_interval: 30
   timeout: 300
   temperature: 0.3
+  vision_models:
+    - minimax-m3
   providers:
     # - name: google
     #   base_url: https://generativelanguage.googleapis.com/v1beta/openai
@@ -49,6 +51,7 @@ llm_proxy:
       models:
         - glm-5.2
         - deepseek-v4-pro
+        - minimax-m3
       plan_type: fixed
       need_vpn: false
     # - name: ark
@@ -57,6 +60,7 @@ llm_proxy:
     #   models:
     #     - glm-5.2
     #     - deepseek-v4-pro
+    #     - minimax-m3
     #   plan_type: fixed
     #   need_vpn: false
     # - name: nvidia
@@ -73,6 +77,7 @@ llm_proxy:
       models:
         - glm-5.2
         - deepseek-v4-pro
+        - minimax-m3
       plan_type: fixed
       need_vpn: false
     # - name: deepseek

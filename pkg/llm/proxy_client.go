@@ -16,6 +16,15 @@ func NewProxyClient(svc *ProxyService) *ProxyClient {
 }
 
 func (c *ProxyClient) Chat(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
+	if hasImageInMessages(req.Messages) {
+		cfg := c.svc.Config()
+		if req.Model == "" || req.Model == cfg.ProxiedModel {
+			if vm := c.svc.PickVisionModel(); vm != "" {
+				req.Model = vm
+			}
+		}
+	}
+
 	payload := c.buildPayload(req)
 
 	resp, err := c.svc.Forward(ctx, payload, req.Model)
@@ -118,4 +127,13 @@ func convertMessages(msgs []Message) []map[string]interface{} {
 		result = append(result, msg)
 	}
 	return result
+}
+
+func hasImageInMessages(msgs []Message) bool {
+	for _, m := range msgs {
+		if m.ImageBase64 != "" {
+			return true
+		}
+	}
+	return false
 }
