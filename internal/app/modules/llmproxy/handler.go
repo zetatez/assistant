@@ -167,6 +167,15 @@ func (h *Handler) responsesHandler(c *gin.Context) {
 	normalizeContent(reqMap)
 
 	model, _ := reqMap["model"].(string)
+	if hasImageInReqMap(reqMap) {
+		proxiedModel := h.svc.Config().ProxiedModel
+		if model == "" || model == proxiedModel {
+			if vm := h.svc.PickVisionModel(); vm != "" {
+				model = vm
+				reqMap["model"] = vm
+			}
+		}
+	}
 	resp, err := h.svc.Forward(c.Request.Context(), reqMap, model)
 	if err != nil {
 		psl.GetLogger().Errorf("llmproxy/responses: %v", err)
