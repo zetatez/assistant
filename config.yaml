@@ -148,5 +148,5 @@ tars:
 news:
   enabled: true
   interval: 30m
-  notify_interval: 16s
-  notify_ttl: 3s
+  notify_interval: 8s
+  notify_ttl: 4s

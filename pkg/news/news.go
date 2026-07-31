@@ -44,6 +44,15 @@ func (c *Collector) Register(p Provider) {
 	c.providers[p.Name()] = p
 }
 
+func (c *Collector) SetClient(client *http.Client) {
+	c.client = client
+	for _, p := range c.providers {
+		if rp, ok := p.(*rssProvider); ok {
+			rp.client = client
+		}
+	}
+}
+
 func (c *Collector) Providers() []string {
 	providers := make([]string, 0, len(c.providers))
 	for name := range c.providers {

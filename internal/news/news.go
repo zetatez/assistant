@@ -2,12 +2,16 @@ package news
 
 import (
 	"context"
+	"net"
+	"net/http"
+	"net/url"
 	"time"
 
 	"assistant/pkg/dwmblocknotify"
 	pkgnews "assistant/pkg/news"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/net/proxy"
 )
 
 type Config struct {
@@ -18,7 +22,7 @@ type Config struct {
 }
 
 type Service struct {
-	cfg            Config
+	enabled        bool
 	collector      *pkgnews.Collector
 	logger         *logrus.Logger
 	fetchInterval  time.Duration
@@ -26,33 +30,42 @@ type Service struct {
 	notifyInterval time.Duration
 }
 
-func NewService(cfg Config, logger *logrus.Logger) *Service {
-	s := &Service{
-		cfg:       cfg,
-		collector: pkgnews.New(),
-		logger:    logger,
+func NewService(cfg Config, vpn string, logger *logrus.Logger) *Service {
+	collector := pkgnews.New()
+	if vpn != "" {
+		if u, err := url.Parse(vpn); err == nil {
+			if d, err := proxy.FromURL(u, proxy.Direct); err == nil {
+				collector.SetClient(&http.Client{
+					Timeout: 8 * time.Second,
+					Transport: &http.Transport{
+						DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+							return d.Dial(network, addr)
+						},
+					},
+				})
+				logger.Infof("news: using VPN %s", vpn)
+			}
+		}
 	}
-	s.fetchInterval = parseDuration(cfg.Interval, 30*time.Minute)
-	s.notifyTTL = parseDuration(cfg.NotifyTTL, 3*time.Second)
-	s.notifyInterval = parseDuration(cfg.NotifyInterval, 16*time.Second)
-	return s
+	return &Service{
+		enabled:        cfg.Enabled,
+		collector:      collector,
+		logger:         logger,
+		fetchInterval:  parseDuration(cfg.Interval, 30*time.Minute),
+		notifyTTL:      parseDuration(cfg.NotifyTTL, 3*time.Second),
+		notifyInterval: parseDuration(cfg.NotifyInterval, 16*time.Second),
+	}
 }
 
 func (s *Service) Start(ctx context.Context) {
-	if !s.cfg.Enabled {
+	if !s.enabled {
 		return
 	}
-	s.logger.WithFields(logrus.Fields{
-		"interval":        s.fetchInterval,
-		"notify_interval": s.notifyInterval,
-		"notify_ttl":      s.notifyTTL,
-	}).Info("news: service started")
 	go s.loop(ctx)
 }
 
 func (s *Service) loop(ctx context.Context) {
 	items := s.fetch(ctx)
-
 	fetchTicker := time.NewTicker(s.fetchInterval)
 	defer fetchTicker.Stop()
 	notifyTicker := time.NewTicker(s.notifyInterval)
@@ -79,24 +92,16 @@ func (s *Service) loop(ctx context.Context) {
 func (s *Service) fetch(ctx context.Context) []pkgnews.Item {
 	var all []pkgnews.Item
 	for _, p := range s.collector.Providers() {
-		items, err := s.collector.Fetch(ctx, p, 16)
-		if err != nil {
-			s.logger.WithError(err).Warnf("news: fetch %s failed", p)
-			continue
+		if items, err := s.collector.Fetch(ctx, p, 16); err == nil {
+			all = append(all, items...)
 		}
-		all = append(all, items...)
 	}
-	s.logger.Infof("news: fetched %d items", len(all))
 	return all
 }
 
 func parseDuration(s string, fallback time.Duration) time.Duration {
-	if s == "" {
-		return fallback
+	if d, err := time.ParseDuration(s); err == nil {
+		return d
 	}
-	d, err := time.ParseDuration(s)
-	if err != nil {
-		return fallback
-	}
-	return d
+	return fallback
 }

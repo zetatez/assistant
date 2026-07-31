@@ -29,7 +29,7 @@ func Run(ctx context.Context) error {
 	psl.RegisterCleanupLLM()
 	psl.StartBackgroundTasks(ctx)
 
-	news.NewService(psl.GetConfig().News, psl.GetLogger()).Start(ctx)
+	news.NewService(psl.GetConfig().News, psl.GetConfig().Settings.VPN, psl.GetLogger()).Start(ctx)
 
 	InitTars(ctx)
 
