@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"assistant/pkg/dwmblocknotify"
-	pkgnews "assistant/pkg/news"
+	"assistant/pkg/news_collector"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/proxy"
@@ -23,7 +23,7 @@ type Config struct {
 
 type Service struct {
 	enabled        bool
-	collector      *pkgnews.Collector
+	collector      *news_collector.Collector
 	logger         *logrus.Logger
 	fetchInterval  time.Duration
 	notifyTTL      time.Duration
@@ -31,7 +31,7 @@ type Service struct {
 }
 
 func NewService(cfg Config, vpn string, logger *logrus.Logger) *Service {
-	collector := pkgnews.New()
+	collector := news_collector.New()
 	if vpn != "" {
 		if u, err := url.Parse(vpn); err == nil {
 			if d, err := proxy.FromURL(u, proxy.Direct); err == nil {
@@ -89,8 +89,8 @@ func (s *Service) loop(ctx context.Context) {
 	}
 }
 
-func (s *Service) fetch(ctx context.Context) []pkgnews.Item {
-	var all []pkgnews.Item
+func (s *Service) fetch(ctx context.Context) []news_collector.Item {
+	var all []news_collector.Item
 	for _, p := range s.collector.Providers() {
 		if items, err := s.collector.Fetch(ctx, p, 16); err == nil {
 			all = append(all, items...)

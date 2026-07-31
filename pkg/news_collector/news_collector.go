@@ -1,4 +1,4 @@
-package news
+package news_collector
 
 import (
 	"context"
