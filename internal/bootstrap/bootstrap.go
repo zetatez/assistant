@@ -7,6 +7,7 @@ import (
 
 	"assistant/internal/app"
 	"assistant/internal/bootstrap/psl"
+	"assistant/internal/news"
 )
 
 func Run(ctx context.Context) error {
@@ -27,6 +28,8 @@ func Run(ctx context.Context) error {
 
 	psl.RegisterCleanupLLM()
 	psl.StartBackgroundTasks(ctx)
+
+	news.NewService(psl.GetConfig().News, psl.GetLogger()).Start(ctx)
 
 	InitTars(ctx)
 

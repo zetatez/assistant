@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"assistant/internal/news"
 	"assistant/pkg/llmproxy"
 	"assistant/pkg/xlog"
 
@@ -65,6 +66,7 @@ type Config struct {
 	Settings    SettingsConfig    `mapstructure:"settings"`
 	Background  BackgroundConfig  `mapstructure:"background"`
 	FileBrowser FileBrowserConfig `mapstructure:"filebrowser"`
+	News        news.Config       `mapstructure:"news"`
 	Tars        TarsConfig        `mapstructure:"tars"`
 }
 

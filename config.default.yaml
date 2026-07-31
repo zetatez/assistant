@@ -144,3 +144,9 @@ tars:
     dir: "~/.config/assistant/wiki"
   web_search:
     enabled: true
+
+news:
+  enabled: false
+  interval: 30m
+  notify_interval: 16s
+  notify_ttl: 3s
