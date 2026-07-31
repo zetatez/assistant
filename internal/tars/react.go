@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"assistant/pkg/llm"
+	llm "assistant/pkg/llmproxy"
 )
 
 const maxReActIterations = 5

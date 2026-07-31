@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"assistant/pkg/llm"
+	llm "assistant/pkg/llmproxy"
 )
 
 var (

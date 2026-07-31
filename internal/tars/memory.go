@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"assistant/pkg/llm"
+	llm "assistant/pkg/llmproxy"
 )
 
 var (

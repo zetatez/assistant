@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"assistant/pkg/llm"
 	"assistant/pkg/aiapi/prompts"
+	llm "assistant/pkg/llmproxy"
 )
 
 type Translator struct {

@@ -1,10 +1,9 @@
 package aiapi
 
 import (
+	llm "assistant/pkg/llmproxy"
 	"context"
 	"fmt"
-
-	"assistant/pkg/llm"
 )
 
 type ReportType string

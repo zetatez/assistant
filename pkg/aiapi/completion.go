@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"assistant/pkg/llm"
+	llm "assistant/pkg/llmproxy"
 	"assistant/pkg/utils"
 )
 

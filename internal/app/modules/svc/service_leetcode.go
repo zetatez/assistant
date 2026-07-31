@@ -12,7 +12,7 @@ import (
 
 	"assistant/internal/bootstrap/psl"
 	"assistant/pkg/dwmblocknotify"
-	"assistant/pkg/llm"
+	llm "assistant/pkg/llmproxy"
 )
 
 var leetCodeSystemPrompt = `你是顶级算法工程师，正在参加技术面试。解决用户给出的算法题，用 Golang 实现。

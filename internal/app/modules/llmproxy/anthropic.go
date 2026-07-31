@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"assistant/internal/bootstrap/psl"
-	"assistant/pkg/llm"
+	llm "assistant/pkg/llmproxy"
 
 	"github.com/gin-gonic/gin"
 )

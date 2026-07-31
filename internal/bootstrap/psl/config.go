@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"assistant/pkg/llm"
+	llm "assistant/pkg/llmproxy"
 	"assistant/pkg/xlog"
 
 	"github.com/spf13/viper"

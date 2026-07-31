@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"assistant/pkg/llm"
 	"assistant/pkg/aiapi/prompts"
+	llm "assistant/pkg/llmproxy"
 )
 
 type EmailComposer struct {

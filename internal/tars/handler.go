@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"assistant/pkg/channel"
-	"assistant/pkg/llm"
+	llm "assistant/pkg/llmproxy"
 )
 
 const (

@@ -3,8 +3,8 @@ package aiapi
 import (
 	"context"
 
-	"assistant/pkg/llm"
 	"assistant/pkg/aiapi/prompts"
+	llm "assistant/pkg/llmproxy"
 )
 
 type LongTextSummarizer struct {

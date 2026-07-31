@@ -1,11 +1,10 @@
 package aiapi
 
 import (
+	llm "assistant/pkg/llmproxy"
 	"context"
 	"encoding/json"
 	"fmt"
-
-	"assistant/pkg/llm"
 )
 
 type SQLIndexAdvisor struct {
