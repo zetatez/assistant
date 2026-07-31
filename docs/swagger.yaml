@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  llmproxy.anthropicMsg:
+  llm.anthropicMsg:
     properties:
       content:
         type: string
@@ -9,13 +9,13 @@ definitions:
       role:
         type: string
     type: object
-  llmproxy.anthropicReq:
+  llm.anthropicReq:
     properties:
       max_tokens:
         type: integer
       messages:
         items:
-          $ref: '#/definitions/llmproxy.anthropicMsg'
+          $ref: '#/definitions/llm.anthropicMsg'
         type: array
       model:
         type: string
@@ -364,7 +364,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/llmproxy.anthropicReq'
+          $ref: '#/definitions/llm.anthropicReq'
       responses:
         "200":
           description: OK

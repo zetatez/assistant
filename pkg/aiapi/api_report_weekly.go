@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"assistant/pkg/aiapi/prompts"
-	llm "assistant/pkg/llmproxy"
+	"assistant/pkg/llmproxy"
 )
 
 type WeeklyReporter struct {
 	engine *Engine
 }
 
-func NewWeeklyReporter(client llm.Client) *WeeklyReporter {
+func NewWeeklyReporter(client llmproxy.Client) *WeeklyReporter {
 	return &WeeklyReporter{engine: NewEngine(client)}
 }
 

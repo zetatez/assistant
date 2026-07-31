@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	llm "assistant/pkg/llmproxy"
+	"assistant/pkg/llmproxy"
 )
 
 const maxReActIterations = 5
 
-func runReAct(ctx context.Context, client llm.Client, req llm.ChatRequest, executor *ToolExecutor, logger Logger) (string, error) {
+func runReAct(ctx context.Context, client llmproxy.Client, req llmproxy.ChatRequest, executor *ToolExecutor, logger Logger) (string, error) {
 	messages := req.Messages
 
 	for i := 0; i < maxReActIterations; i++ {
@@ -23,8 +23,8 @@ func runReAct(ctx context.Context, client llm.Client, req llm.ChatRequest, execu
 			return resp.Content, nil
 		}
 
-		messages = append(messages, llm.Message{
-			Role:      llm.RoleAI,
+		messages = append(messages, llmproxy.Message{
+			Role:      llmproxy.RoleAI,
 			Content:   resp.Content,
 			ToolCalls: resp.ToolCalls,
 		})
@@ -35,8 +35,8 @@ func runReAct(ctx context.Context, client llm.Client, req llm.ChatRequest, execu
 				logger.Warnf("tars: tool %s error: %v", tc.Function.Name, err)
 				result = fmt.Sprintf("Tool error: %v", err)
 			}
-			messages = append(messages, llm.Message{
-				Role:       llm.RoleTool,
+			messages = append(messages, llmproxy.Message{
+				Role:       llmproxy.RoleTool,
 				Content:    result,
 				ToolCallID: tc.ID,
 			})

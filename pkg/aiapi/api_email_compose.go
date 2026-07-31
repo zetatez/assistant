@@ -6,14 +6,14 @@ import (
 	"strings"
 
 	"assistant/pkg/aiapi/prompts"
-	llm "assistant/pkg/llmproxy"
+	"assistant/pkg/llmproxy"
 )
 
 type EmailComposer struct {
 	engine *Engine
 }
 
-func NewEmailComposer(client llm.Client) *EmailComposer {
+func NewEmailComposer(client llmproxy.Client) *EmailComposer {
 	return &EmailComposer{engine: NewEngine(client)}
 }
 

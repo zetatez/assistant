@@ -421,7 +421,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/llmproxy.anthropicReq"
+                            "$ref": "#/definitions/llm.anthropicReq"
                         }
                     }
                 ],
@@ -1645,7 +1645,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "llmproxy.anthropicMsg": {
+        "llm.anthropicMsg": {
             "type": "object",
             "properties": {
                 "content": {
@@ -1659,7 +1659,7 @@ const docTemplate = `{
                 }
             }
         },
-        "llmproxy.anthropicReq": {
+        "llm.anthropicReq": {
             "type": "object",
             "properties": {
                 "max_tokens": {
@@ -1668,7 +1668,7 @@ const docTemplate = `{
                 "messages": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/llmproxy.anthropicMsg"
+                        "$ref": "#/definitions/llm.anthropicMsg"
                     }
                 },
                 "model": {

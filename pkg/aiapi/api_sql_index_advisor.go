@@ -1,7 +1,7 @@
 package aiapi
 
 import (
-	llm "assistant/pkg/llmproxy"
+	"assistant/pkg/llmproxy"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,7 +11,7 @@ type SQLIndexAdvisor struct {
 	engine *Engine
 }
 
-func NewSQLIndexAdvisor(client llm.Client) *SQLIndexAdvisor {
+func NewSQLIndexAdvisor(client llmproxy.Client) *SQLIndexAdvisor {
 	return &SQLIndexAdvisor{engine: NewEngine(client)}
 }
 

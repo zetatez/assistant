@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"assistant/pkg/channel"
-	llm "assistant/pkg/llmproxy"
+	"assistant/pkg/llmproxy"
 )
 
 const (
@@ -29,7 +29,7 @@ type Logger interface {
 
 type Handler struct {
 	ch             channel.Channel
-	llmClient      llm.Client
+	llmClient      llmproxy.Client
 	memory         *MemoryService
 	logger         Logger
 	llmModel       string
@@ -40,7 +40,7 @@ type Handler struct {
 	sessionLocks   sync.Map
 }
 
-func NewHandler(ch channel.Channel, memory *MemoryService, llmClient llm.Client, wikiMgr *IndexManager, logger Logger, llmModel string, llmTemperature float32, messageTimeout time.Duration) *Handler {
+func NewHandler(ch channel.Channel, memory *MemoryService, llmClient llmproxy.Client, wikiMgr *IndexManager, logger Logger, llmModel string, llmTemperature float32, messageTimeout time.Duration) *Handler {
 	return &Handler{
 		ch:             ch,
 		memory:         memory,
@@ -123,8 +123,8 @@ func (h *Handler) processMessage(sessionID, openID, messageID string, userMsg Us
 		messages = h.buildFallbackContext(sessionID)
 	}
 
-	userLLMMsg := llm.Message{
-		Role:    llm.RoleUser,
+	userLLMMsg := llmproxy.Message{
+		Role:    llmproxy.RoleUser,
 		Content: userText,
 	}
 
@@ -202,7 +202,7 @@ func (h *Handler) processMessage(sessionID, openID, messageID string, userMsg Us
 	h.logger.Infof("tars: [trace=%s] message processed in %v", traceID, time.Since(startTime))
 }
 
-func (h *Handler) buildContext(ctx context.Context, sessionID string) ([]llm.Message, error) {
+func (h *Handler) buildContext(ctx context.Context, sessionID string) ([]llmproxy.Message, error) {
 	memMsgs, err := h.memory.GetContextForLLM(ctx, sessionID)
 	if err != nil {
 		return nil, err
@@ -215,13 +215,13 @@ func (h *Handler) buildContext(ctx context.Context, sessionID string) ([]llm.Mes
 	return truncateMessagesByTokens(messages, maxContextTokens), nil
 }
 
-func (h *Handler) buildFallbackContext(sessionID string) []llm.Message {
+func (h *Handler) buildFallbackContext(sessionID string) []llmproxy.Message {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	messages, err := h.memory.GetContextForLLM(ctx, sessionID)
 	if err != nil || len(messages) == 0 {
-		messages = []llm.Message{
-			{Role: llm.RoleSystem, Content: loadSystemPrompt()},
+		messages = []llmproxy.Message{
+			{Role: llmproxy.RoleSystem, Content: loadSystemPrompt()},
 		}
 	}
 	recentMsgs, err := h.memory.GetRecentMessages(ctx, sessionID)
@@ -231,8 +231,8 @@ func (h *Handler) buildFallbackContext(sessionID string) []llm.Message {
 	return truncateMessagesByTokens(messages, maxContextTokens)
 }
 
-func (h *Handler) callLLM(ctx context.Context, messages []llm.Message) (string, error) {
-	req := llm.ChatRequest{
+func (h *Handler) callLLM(ctx context.Context, messages []llmproxy.Message) (string, error) {
+	req := llmproxy.ChatRequest{
 		Model:       h.llmModel,
 		Messages:    messages,
 		Tools:       h.tools.Definitions(),

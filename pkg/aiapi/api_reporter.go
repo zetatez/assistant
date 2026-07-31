@@ -1,7 +1,7 @@
 package aiapi
 
 import (
-	llm "assistant/pkg/llmproxy"
+	"assistant/pkg/llmproxy"
 	"context"
 	"fmt"
 )
@@ -35,10 +35,10 @@ type ReportResult struct {
 }
 
 type Reporter struct {
-	client llm.Client
+	client llmproxy.Client
 }
 
-func NewReporter(client llm.Client) *Reporter {
+func NewReporter(client llmproxy.Client) *Reporter {
 	return &Reporter{client: client}
 }
 

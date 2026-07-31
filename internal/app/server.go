@@ -12,7 +12,7 @@ import (
 	"assistant/internal/app/modules/filebrowser"
 	"assistant/internal/app/modules/health"
 	"assistant/internal/app/modules/kindle"
-	"assistant/internal/app/modules/llmproxy"
+	"assistant/internal/app/modules/llm"
 	"assistant/internal/app/modules/svc"
 	"assistant/internal/bootstrap/psl"
 
@@ -40,7 +40,7 @@ func Run(ctx context.Context) error {
 		health.NewModule(),
 		svc.NewModule(),
 		filebrowser.NewModule(),
-		llmproxy.NewModule(),
+		llm.NewModule(),
 		kindle.NewModule(),
 	}
 

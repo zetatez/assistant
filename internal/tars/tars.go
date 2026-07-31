@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"assistant/pkg/channel"
-	llm "assistant/pkg/llmproxy"
+	"assistant/pkg/llmproxy"
 )
 
 type TarsConfig struct {
@@ -27,7 +27,7 @@ type Service struct {
 	logger      Logger
 }
 
-func NewService(ch channel.Channel, llmClient llm.Client, llmModel string, cfg *TarsConfig, logger Logger) *Service {
+func NewService(ch channel.Channel, llmClient llmproxy.Client, llmModel string, cfg *TarsConfig, logger Logger) *Service {
 	if !cfg.Enabled {
 		return &Service{logger: logger}
 	}

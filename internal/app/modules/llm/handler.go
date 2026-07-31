@@ -1,4 +1,4 @@
-package llmproxy
+package llm
 
 import (
 	"encoding/json"
@@ -11,16 +11,16 @@ import (
 	"time"
 
 	"assistant/internal/bootstrap/psl"
-	llm "assistant/pkg/llmproxy"
+	"assistant/pkg/llmproxy"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	svc *llm.ProxyService
+	svc *llmproxy.ProxyService
 }
 
-func NewHandler(svc *llm.ProxyService) *Handler {
+func NewHandler(svc *llmproxy.ProxyService) *Handler {
 	return &Handler{svc: svc}
 }
 
@@ -393,7 +393,7 @@ func (h *Handler) streamResponses(c *gin.Context, resp *http.Response) {
 }
 
 func (h *Handler) writeError(c *gin.Context, err error) {
-	var httpErr *llm.HTTPError
+	var httpErr *llmproxy.HTTPError
 	if errors.As(err, &httpErr) {
 		c.JSON(httpErr.Code, gin.H{"error": httpErr.Message})
 		return

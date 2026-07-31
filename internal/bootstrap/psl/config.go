@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	llm "assistant/pkg/llmproxy"
+	"assistant/pkg/llmproxy"
 	"assistant/pkg/xlog"
 
 	"github.com/spf13/viper"
@@ -61,7 +61,7 @@ func loadConfig() (*Config, error) {
 type Config struct {
 	App         AppConfig         `mapstructure:"app"`
 	Log         xlog.LogConfig    `mapstructure:"log"`
-	LLMProxy    llm.Config        `mapstructure:"llm_proxy"`
+	LLMProxy    llmproxy.Config   `mapstructure:"llm_proxy"`
 	Settings    SettingsConfig    `mapstructure:"settings"`
 	Background  BackgroundConfig  `mapstructure:"background"`
 	FileBrowser FileBrowserConfig `mapstructure:"filebrowser"`

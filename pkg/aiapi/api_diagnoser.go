@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	"assistant/pkg/aiapi/prompts"
-	llm "assistant/pkg/llmproxy"
+	"assistant/pkg/llmproxy"
 )
 
 type Diagnoser struct {
 	engine *Engine
 }
 
-func NewDiagnoser(client llm.Client) *Diagnoser {
+func NewDiagnoser(client llmproxy.Client) *Diagnoser {
 	return &Diagnoser{engine: NewEngine(client)}
 }
 

@@ -4,26 +4,26 @@ import (
 	"context"
 	"sync"
 
-	llm "assistant/pkg/llmproxy"
+	"assistant/pkg/llmproxy"
 )
 
 var (
-	llmProxySvc   *llm.ProxyService
-	llmClient     llm.Client
+	llmProxySvc   *llmproxy.ProxyService
+	llmClient     llmproxy.Client
 	onceLLMClient sync.Once
 )
 
-func GetProxyService() *llm.ProxyService { return llmProxySvc }
+func GetProxyService() *llmproxy.ProxyService { return llmProxySvc }
 
-func GetLLMClient() llm.Client { return llmClient }
+func GetLLMClient() llmproxy.Client { return llmClient }
 
 func InitLLMClient() error {
 	onceLLMClient.Do(func() {
 		cfg := GetConfig().LLMProxy
 		cfg.VPN = GetConfig().Settings.VPN
-		llmProxySvc = llm.NewProxyService(cfg)
+		llmProxySvc = llmproxy.NewProxyService(cfg)
 		if llmProxySvc.HasProviders() {
-			llmClient = llm.NewProxyClient(llmProxySvc)
+			llmClient = llmproxy.NewProxyClient(llmProxySvc)
 		}
 	})
 	return nil

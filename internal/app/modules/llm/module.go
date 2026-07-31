@@ -1,10 +1,11 @@
-package llmproxy
+package llm
 
 import (
 	"net/http"
 
 	"assistant/internal/app/module"
 	"assistant/internal/bootstrap/psl"
+
 	"github.com/gin-gonic/gin"
 )
 

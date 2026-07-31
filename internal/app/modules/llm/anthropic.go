@@ -1,4 +1,4 @@
-package llmproxy
+package llm
 
 import (
 	"bufio"
@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"assistant/internal/bootstrap/psl"
-	llm "assistant/pkg/llmproxy"
+	"assistant/pkg/llmproxy"
 
 	"github.com/gin-gonic/gin"
 )
@@ -150,7 +150,7 @@ func (h *Handler) anthropicMessages(c *gin.Context) {
 	resp, err := h.svc.Forward(c.Request.Context(), reqMap, areq.Model)
 	if err != nil {
 		psl.GetLogger().Errorf("llmproxy/anthropic: %v", err)
-		var httpErr *llm.HTTPError
+		var httpErr *llmproxy.HTTPError
 		if errors.As(err, &httpErr) {
 			writeAnthropicError(c, httpErr.Code, "api_error", httpErr.Message)
 		} else {
