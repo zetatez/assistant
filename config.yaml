@@ -146,7 +146,7 @@ tars:
     enabled: true
 
 news:
-  enabled: true
+  enabled: false
   interval: 30m
   notify_interval: 8s
   notify_ttl: 4s
