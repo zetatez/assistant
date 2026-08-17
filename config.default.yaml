@@ -60,59 +60,77 @@ llm_proxy:
   probe_interval: 30
   timeout: 300
   temperature: 0.3
+  balance_strategy: priority # priority | random | round_robin
+  offline_failure_threshold: 3 # 连续失败次数达到后标记 offline
+  rate_limit_cooldown: 60 # 429 限流的冷却秒数
   vision_models:
     - minimax-m3
   providers:
+    # api_type: openai（默认）| anthropic —— 标记该 provider 上游接口协议
     # - name: google
+    #   api_type: openai
     #   base_url: https://generativelanguage.googleapis.com/v1beta/openai
     #   api_key: "${GEMINI_API_KEY}"
     #   models:
     #     - gemini-3.5-flash
-    #   plan_type: fixed
+    #   priority: 1
     #   need_vpn: true
     # - name: nvidia
+    #   api_type: openai
     #   base_url: https://integrate.api.nvidia.com/v1
     #   api_key: "${NVIDIA_API_KEY}"
     #   models:
-    #     - z-ai/glm-5.2
+    #     - z-ai/glm-5.3
     #     - deepseek-ai/deepseek-v4-pro
-    #   plan_type: fixed
+    #   priority: 2
+    #   need_vpn: true
+    # - name: anthropic
+    #   api_type: anthropic
+    #   base_url: https://api.anthropic.com
+    #   api_key: "${ANTHROPIC_API_KEY}"
+    #   models:
+    #     - claude-sonnet-4-5
+    #   priority: 3
     #   need_vpn: true
     # - name: ark
+    #   api_type: openai
     #   base_url: https://ark.cn-beijing.volces.com/api/plan/v3
     #   api_key: "${ARK_AGENT_PLAN_API_KEY_ZIWEI}"
     #   models:
-    #     - glm-5.2
+    #     - glm-5.3
     #     - deepseek-v4-pro
     #     - minimax-m3
-    #   plan_type: fixed
-    #   need_vpn: false
-    # - name: ark
-    #   base_url: https://ark.cn-beijing.volces.com/api/plan/v3
-    #   api_key: "${ARK_AGENT_PLAN_API_KEY}"
-    #   models:
-    #     - glm-5.2
-    #     - deepseek-v4-pro
-    #     - minimax-m3
-    #   plan_type: fixed
+    #   priority: 3
     #   need_vpn: false
     - name: ark
+      api_type: openai
+      base_url: https://ark.cn-beijing.volces.com/api/plan/v3
+      api_key: "${ARK_AGENT_PLAN_API_KEY}"
+      models:
+        - glm-5.3
+        - deepseek-v4-pro
+        - minimax-m3
+      priority: 1
+      need_vpn: false
+    - name: ark
+      api_type: openai
       base_url: https://ark.cn-beijing.volces.com/api/coding/v3
       api_key: "${ARK_CODING_PLAN_API_KEY}"
       models:
-        - glm-5.2
+        - glm-5.3
         - deepseek-v4-pro
         - minimax-m3
-      plan_type: fixed
+      priority: 2
       need_vpn: false
-    - name: deepseek
-      base_url: https://api.deepseek.com
-      api_key: "${DEEPSEEK_API_KEY}"
-      models:
-        - deepseek-v4-pro
-        - deepseek-v4-flash
-      plan_type: payg
-      need_vpn: false
+    # - name: deepseek
+    #   api_type: openai
+    #   base_url: https://api.deepseek.com
+    #   api_key: "${DEEPSEEK_API_KEY}"
+    #   models:
+    #     - deepseek-v4-pro
+    #     - deepseek-v4-flash
+    #   priority: 4
+    #   need_vpn: false
 
 filebrowser:
   root: "/home/shiyi"
@@ -148,5 +166,5 @@ tars:
 news:
   enabled: false
   interval: 30m
-  notify_interval: 16s
-  notify_ttl: 3s
+  notify_interval: 8s
+  notify_ttl: 4s

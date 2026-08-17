@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
 	"slices"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -27,39 +29,55 @@ var sharedTransport = &http.Transport{
 type ProviderStatus string
 
 const (
-	StatusAvailable ProviderStatus = "available"
-	StatusExhausted ProviderStatus = "exhausted"
-	StatusOffline   ProviderStatus = "offline"
+	StatusAvailable   ProviderStatus = "available"
+	StatusExhausted   ProviderStatus = "exhausted"
+	StatusOffline     ProviderStatus = "offline"
+	StatusConfigError ProviderStatus = "config_error"
+)
+
+type Strategy string
+
+const (
+	StrategyPriority   Strategy = "priority"
+	StrategyRandom     Strategy = "random"
+	StrategyRoundRobin Strategy = "round_robin"
 )
 
 type ProviderConfig struct {
 	Name     string   `mapstructure:"name"`
 	BaseURL  string   `mapstructure:"base_url"`
 	APIKey   string   `mapstructure:"api_key"`
+	APIType  string   `mapstructure:"api_type"` // "openai" (default) | "anthropic"
 	Models   []string `mapstructure:"models"`
-	PlanType string   `mapstructure:"plan_type"`
 	NeedVPN  bool     `mapstructure:"need_vpn"`
+	Priority int      `mapstructure:"priority"`
 }
 
 type Config struct {
-	ProxiedModel  string           `mapstructure:"proxied_model"`
-	VisionModels  []string         `mapstructure:"vision_models"`
-	ProbeInterval int              `mapstructure:"probe_interval"`
-	ProxiedAPIKey string           `mapstructure:"proxied_api_key"`
-	Timeout       int              `mapstructure:"timeout"`
-	Temperature   float32          `mapstructure:"temperature"`
-	VPN           string           `mapstructure:"vpn"`
-	Providers     []ProviderConfig `mapstructure:"providers"`
+	ProxiedModel            string           `mapstructure:"proxied_model"`
+	VisionModels            []string         `mapstructure:"vision_models"`
+	ProbeInterval           int              `mapstructure:"probe_interval"`
+	ProxiedAPIKey           string           `mapstructure:"proxied_api_key"`
+	Timeout                 int              `mapstructure:"timeout"`
+	Temperature             float32          `mapstructure:"temperature"`
+	VPN                     string           `mapstructure:"vpn"`
+	BalanceStrategy         string           `mapstructure:"balance_strategy"`
+	OfflineFailureThreshold int              `mapstructure:"offline_failure_threshold"`
+	RateLimitCooldown       int              `mapstructure:"rate_limit_cooldown"`
+	Providers               []ProviderConfig `mapstructure:"providers"`
 }
 
 type providerState struct {
 	ProviderConfig
 	status           ProviderStatus
 	rateLimitedUntil time.Time
+	failures         int
 }
 
 type ProxyService struct {
 	config       Config
+	strategy     Strategy
+	rrIndex      int
 	mu           sync.RWMutex
 	providers    []*providerState
 	active       *providerState
@@ -78,7 +96,8 @@ func NewProxyService(cfg Config) *ProxyService {
 	}
 
 	s := &ProxyService{
-		config: cfg,
+		config:   cfg,
+		strategy: normalizeStrategy(cfg.BalanceStrategy),
 		httpClient: &http.Client{
 			Timeout:   timeout,
 			Transport: sharedTransport,
@@ -98,13 +117,31 @@ func NewProxyService(cfg Config) *ProxyService {
 		}
 	}
 
-	for _, pc := range cfg.Providers {
+	for i, pc := range cfg.Providers {
+		if pc.Priority == 0 {
+			pc.Priority = i + 1
+		}
 		s.providers = append(s.providers, &providerState{
 			ProviderConfig: pc,
 			status:         StatusAvailable,
 		})
 	}
+
+	sort.SliceStable(s.providers, func(i, j int) bool {
+		return s.providers[i].Priority < s.providers[j].Priority
+	})
 	return s
+}
+
+func normalizeStrategy(s string) Strategy {
+	switch Strategy(strings.ToLower(strings.TrimSpace(s))) {
+	case StrategyRandom:
+		return StrategyRandom
+	case StrategyRoundRobin:
+		return StrategyRoundRobin
+	default:
+		return StrategyPriority
+	}
 }
 
 func newSocksDialer(proxyURL string) (interface {
@@ -129,7 +166,9 @@ func (s *socksDialer) DialContext(ctx context.Context, network, addr string) (ne
 	return s.d.Dial(network, addr)
 }
 
-func (s *ProxyService) Config() Config { return s.config }
+func (s *ProxyService) Config() Config        { return s.config }
+func (s *ProxyService) Strategy() string      { return string(s.strategy) }
+func (s *ProxyService) FailureThreshold() int { return s.config.OfflineFailureThreshold }
 
 func (s *ProxyService) HasProviders() bool {
 	s.mu.RLock()
@@ -149,13 +188,12 @@ func (s *ProxyService) ActiveProvider() *ProviderConfig {
 func (s *ProxyService) PickVisionModel() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	now := time.Now()
 	for _, vm := range s.config.VisionModels {
 		for _, p := range s.providers {
-			if p.status == StatusExhausted || p.status == StatusOffline {
+			if p.status == StatusExhausted || p.status == StatusOffline || p.status == StatusConfigError {
 				continue
 			}
-			if now.Before(p.rateLimitedUntil) {
+			if time.Now().Before(p.rateLimitedUntil) {
 				continue
 			}
 			if slices.Contains(p.Models, vm) {
@@ -171,34 +209,75 @@ func (s *ProxyService) ProviderStatuses() []map[string]interface{} {
 	defer s.mu.RUnlock()
 	var res []map[string]interface{}
 	for _, p := range s.providers {
-		m := map[string]interface{}{
-			"name":      p.Name,
-			"status":    p.status,
-			"plan_type": p.PlanType,
-		}
-		res = append(res, m)
+		res = append(res, map[string]interface{}{
+			"name":               p.Name,
+			"status":             p.status,
+			"priority":           p.Priority,
+			"failures":           p.failures,
+			"rate_limited_until": p.rateLimitedUntil,
+		})
 	}
 	return res
 }
 
-func (s *ProxyService) pickBestLocked(model string) *providerState {
+func (s *ProxyService) availableProvidersLocked(model string) []*providerState {
 	now := time.Now()
+	var out []*providerState
 	for _, p := range s.providers {
-		if p.status != StatusAvailable && p.PlanType != "payg" {
+		if p.status == StatusExhausted || p.status == StatusConfigError {
 			continue
 		}
-		if p.status == StatusExhausted {
+		if p.status == StatusOffline {
 			continue
 		}
-		if p.status == StatusAvailable && now.Before(p.rateLimitedUntil) {
+		if now.Before(p.rateLimitedUntil) {
 			continue
 		}
 		if model != "" && !slices.Contains(p.Models, model) {
 			continue
 		}
-		return p
+		out = append(out, p)
 	}
-	return nil
+	return out
+}
+
+func (s *ProxyService) pickByStrategy(candidates []*providerState) *providerState {
+	switch s.strategy {
+	case StrategyRandom:
+		return candidates[rand.Intn(len(candidates))]
+	case StrategyRoundRobin:
+		p := candidates[s.rrIndex%len(candidates)]
+		s.rrIndex++
+		return p
+	default:
+		return candidates[0]
+	}
+}
+
+func (s *ProxyService) pickBestLocked(model string) *providerState {
+	candidates := s.availableProvidersLocked(model)
+	if len(candidates) == 0 {
+		return nil
+	}
+	return s.pickByStrategy(candidates)
+}
+
+func (s *ProxyService) findNext(current *providerState, modelSpecific bool, originalModel string) *providerState {
+	model := ""
+	if modelSpecific {
+		model = originalModel
+	}
+	candidates := s.availableProvidersLocked(model)
+	var rest []*providerState
+	for _, p := range candidates {
+		if p != current {
+			rest = append(rest, p)
+		}
+	}
+	if len(rest) == 0 {
+		return nil
+	}
+	return s.pickByStrategy(rest)
 }
 
 func (s *ProxyService) markProvider(p *providerState, status ProviderStatus, cooldown time.Duration) {
@@ -212,6 +291,43 @@ func (s *ProxyService) markProvider(p *providerState, status ProviderStatus, coo
 	}
 	if s.active == p {
 		s.active = nil
+	}
+}
+
+func (s *ProxyService) recordFailure(p *providerState) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	p.failures++
+	threshold := s.config.OfflineFailureThreshold
+	if threshold <= 0 {
+		threshold = 3
+	}
+	if p.failures >= threshold && p.status != StatusConfigError {
+		p.status = StatusOffline
+		if s.active == p {
+			s.active = nil
+		}
+	}
+}
+
+func (s *ProxyService) recordSuccess(p *providerState) {
+	s.mu.Lock()
+	p.failures = 0
+	s.mu.Unlock()
+}
+
+func (s *ProxyService) classifyProviderFailure(p *providerState, statusCode int) {
+	switch {
+	case statusCode == http.StatusTooManyRequests:
+		cooldown := s.config.RateLimitCooldown
+		if cooldown <= 0 {
+			cooldown = 60
+		}
+		s.markProvider(p, "", time.Duration(cooldown)*time.Second)
+	case statusCode == http.StatusUnauthorized || statusCode == http.StatusForbidden || statusCode == http.StatusNotFound:
+		s.markProvider(p, StatusConfigError, 0)
+	default:
+		s.markProvider(p, StatusExhausted, 0)
 	}
 }
 
@@ -238,7 +354,7 @@ func (s *ProxyService) ProbeHigherPriority() {
 	s.mu.RUnlock()
 
 	for _, p := range candidates {
-		if p.PlanType == "payg" {
+		if p.status == StatusConfigError {
 			continue
 		}
 		client := s.httpClient
@@ -249,6 +365,7 @@ func (s *ProxyService) ProbeHigherPriority() {
 			s.mu.Lock()
 			p.status = StatusAvailable
 			p.rateLimitedUntil = time.Time{}
+			p.failures = 0
 			s.mu.Unlock()
 		}
 	}
@@ -335,8 +452,24 @@ func (s *ProxyService) probeLoop() {
 }
 
 func (s *ProxyService) ForwardChat(ctx context.Context, cfg ProviderConfig, bodyReader io.ReadCloser) (*http.Response, error) {
+	raw, err := io.ReadAll(bodyReader)
+	bodyReader.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	isAnthropic := strings.EqualFold(cfg.APIType, "anthropic")
 	targetURL := strings.TrimRight(cfg.BaseURL, "/") + "/chat/completions"
-	req, err := http.NewRequestWithContext(ctx, "POST", targetURL, bodyReader)
+	body := raw
+	if isAnthropic {
+		targetURL = strings.TrimRight(cfg.BaseURL, "/") + "/v1/messages"
+		body, err = OpenAIReqToAnthropic(raw)
+		if err != nil {
+			return nil, fmt.Errorf("convert to anthropic request: %w", err)
+		}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", targetURL, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
@@ -348,32 +481,15 @@ func (s *ProxyService) ForwardChat(ctx context.Context, cfg ProviderConfig, body
 	if cfg.NeedVPN && s.vpnClient != nil {
 		client = s.vpnClient
 	}
-	return client.Do(req)
-}
-
-func (s *ProxyService) findNext(current *providerState, modelSpecific bool, originalModel string) *providerState {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	now := time.Now()
-	for _, p := range s.providers {
-		if p == current {
-			continue
-		}
-		if p.status != StatusAvailable && p.PlanType != "payg" {
-			continue
-		}
-		if p.status == StatusExhausted {
-			continue
-		}
-		if p.status == StatusAvailable && now.Before(p.rateLimitedUntil) {
-			continue
-		}
-		if modelSpecific && !slices.Contains(p.Models, originalModel) {
-			continue
-		}
-		return p
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+
+	if isAnthropic && resp.StatusCode < 400 {
+		return convertAnthropicResponse(resp)
+	}
+	return resp, nil
 }
 
 func (s *ProxyService) Forward(ctx context.Context, reqMap map[string]interface{}, requestedModel string) (*http.Response, error) {
@@ -410,7 +526,7 @@ func (s *ProxyService) Forward(ctx context.Context, reqMap map[string]interface{
 
 		resp, err := s.ForwardChat(ctx, p.ProviderConfig, io.NopCloser(bytes.NewReader(body)))
 		if err != nil {
-			s.markProvider(p, StatusOffline, 0)
+			s.recordFailure(p)
 			next := s.findNext(p, modelSpecific, requestedModel)
 			if next == nil {
 				s.NotifyActivity()
@@ -421,6 +537,7 @@ func (s *ProxyService) Forward(ctx context.Context, reqMap map[string]interface{
 		}
 
 		if resp.StatusCode == http.StatusOK {
+			s.recordSuccess(p)
 			s.NotifyActivity()
 			return resp, nil
 		}
@@ -428,13 +545,7 @@ func (s *ProxyService) Forward(ctx context.Context, reqMap map[string]interface{
 		bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 8192))
 		resp.Body.Close()
 
-		if resp.StatusCode == 429 {
-			s.markProvider(p, "", 60*time.Second)
-		} else if p.PlanType == "fixed" {
-			s.markProvider(p, StatusExhausted, 0)
-		} else {
-			s.markProvider(p, StatusOffline, 0)
-		}
+		s.classifyProviderFailure(p, resp.StatusCode)
 
 		next := s.findNext(p, modelSpecific, requestedModel)
 		if next == nil {
@@ -474,16 +585,19 @@ func resolveModel(p *providerState, requested string) string {
 func (s *ProxyService) noProviderError() error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	exhausted, offline := 0, 0
+	exhausted, offline, cfgErr := 0, 0, 0
 	for _, p := range s.providers {
-		if p.status == StatusExhausted {
+		switch p.status {
+		case StatusExhausted:
 			exhausted++
-		} else if p.status == StatusOffline && p.PlanType != "payg" {
+		case StatusOffline:
 			offline++
+		case StatusConfigError:
+			cfgErr++
 		}
 	}
-	if exhausted > 0 {
-		return fmt.Errorf("no available provider (%d exhausted, %d offline)", exhausted, offline)
+	if exhausted > 0 || cfgErr > 0 {
+		return fmt.Errorf("no available provider (%d exhausted, %d offline, %d config_error)", exhausted, offline, cfgErr)
 	}
 	return fmt.Errorf("no available provider (%d offline)", offline)
 }

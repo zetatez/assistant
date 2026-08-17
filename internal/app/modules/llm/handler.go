@@ -410,6 +410,7 @@ func (h *Handler) Status(c *gin.Context) {
 	active := h.svc.ActiveProvider()
 	resp := map[string]interface{}{
 		"providers": h.svc.ProviderStatuses(),
+		"strategy":  h.svc.Strategy(),
 	}
 	if active != nil {
 		resp["active_provider"] = active.Name
