@@ -105,14 +105,14 @@ llm_proxy:
         - minimax-m3
       plan_type: fixed
       need_vpn: false
-    - name: deepseek
-      base_url: https://api.deepseek.com
-      api_key: "${DEEPSEEK_API_KEY}"
-      models:
-        - deepseek-v4-pro
-        - deepseek-v4-flash
-      plan_type: payg
-      need_vpn: false
+    # - name: deepseek
+    #   base_url: https://api.deepseek.com
+    #   api_key: "${DEEPSEEK_API_KEY}"
+    #   models:
+    #     - deepseek-v4-pro
+    #     - deepseek-v4-flash
+    #   plan_type: payg
+    #   need_vpn: false
 
 filebrowser:
   root: "/home/shiyi"
