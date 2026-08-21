@@ -1198,6 +1198,40 @@
                 }
             }
         },
+        "/api/svr/solve-question": {
+            "post": {
+                "description": "从剪贴板读取问题, 调用大模型回答, 结果写入 x.md 和剪贴板",
+                "tags": [
+                    "AI"
+                ],
+                "summary": "AI 问答",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/svr/solve-question-screenshot": {
+            "post": {
+                "description": "截图当前屏幕, 调用大模型回答屏幕中的问题, 结果写入 X.md 和剪贴板",
+                "tags": [
+                    "AI"
+                ],
+                "summary": "AI 截图问答",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/svr/sys-bluetooth-connect": {
             "post": {
                 "description": "触发 rofi 选择已配对设备并连接",

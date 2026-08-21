@@ -70,6 +70,8 @@ func (h *Handler) Register(r *gin.RouterGroup) {
 	r.POST("/snip-fzf", h.SnipFzf)
 	r.POST("/solve-leetcode", h.SolveLeetCode)
 	r.POST("/solve-leetcode-screenshot", h.SolveLeetCodeScreenshot)
+	r.POST("/solve-question", h.SolveQuestion)
+	r.POST("/solve-question-screenshot", h.SolveQuestionScreenshot)
 	r.POST("/sys-bluetooth-connect", h.SysBluetoothConnect)
 	r.POST("/sys-bluetooth-disconnect", h.SysBluetoothDisconnect)
 	r.POST("/sys-bluetooth-scan-connect", h.SysBluetoothScanConnect)
@@ -257,6 +259,38 @@ func (h *Handler) SolveLeetCodeScreenshot(c *gin.Context) {
 		dwmblocknotify.PUT("error", 5*time.Second)
 		psl.GetLogger().WithError(err).Error("solve leetcode with screenshot failed")
 		response.ErrWithInternal(c, response.CodeServerError, "solve leetcode failed", err)
+		return
+	}
+	response.Ok(c, gin.H{"status": "done"})
+}
+
+// SolveQuestion godoc
+// @Summary AI 问答
+// @Description 从剪贴板读取问题, 调用大模型回答, 结果写入 x.md 和剪贴板
+// @Tags AI
+// @Success 200 {object} response.Response
+// @Router /api/svr/solve-question [post]
+func (h *Handler) SolveQuestion(c *gin.Context) {
+	if err := h.svc.SolveQuestion(); err != nil {
+		dwmblocknotify.PUT("error", 5*time.Second)
+		psl.GetLogger().WithError(err).Error("solve question failed")
+		response.ErrWithInternal(c, response.CodeServerError, "solve question failed", err)
+		return
+	}
+	response.Ok(c, gin.H{"status": "done"})
+}
+
+// SolveQuestionScreenshot godoc
+// @Summary AI 截图问答
+// @Description 截图当前屏幕, 调用大模型回答屏幕中的问题, 结果写入 X.md 和剪贴板
+// @Tags AI
+// @Success 200 {object} response.Response
+// @Router /api/svr/solve-question-screenshot [post]
+func (h *Handler) SolveQuestionScreenshot(c *gin.Context) {
+	if err := h.svc.SolveQuestionScreenshot(); err != nil {
+		dwmblocknotify.PUT("error", 5*time.Second)
+		psl.GetLogger().WithError(err).Error("solve question with screenshot failed")
+		response.ErrWithInternal(c, response.CodeServerError, "solve question failed", err)
 		return
 	}
 	response.Ok(c, gin.H{"status": "done"})
