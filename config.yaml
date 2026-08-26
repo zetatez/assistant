@@ -64,7 +64,7 @@ llm_proxy:
   offline_failure_threshold: 3 # 连续失败次数达到后标记 offline
   rate_limit_cooldown: 60 # 429 限流的冷却秒数
   vision_models:
-    - minimax-m3
+    - deepseek-v4-flash-vision-exp
   providers:
     # api_type: openai（默认）| anthropic —— 标记该 provider 上游接口协议
     # - name: zenmux
@@ -126,6 +126,7 @@ llm_proxy:
       models:
         - deepseek-v4-flash
         - deepseek-v4-pro
+        - deepseek-v4-flash-vision-exp
       priority: 4
       need_vpn: false
 
