@@ -119,16 +119,16 @@ llm_proxy:
     #     - minimax-m3
     #   priority: 3
     #   need_vpn: false
-    - name: modcom
-      api_type: openai
-      base_url: https://modcon.top/v1
-      api_key: "${MODCOM_API_KEY}"
-      models:
-        - gpt-5.6-luna
-        - gpt-5.6-sol
-        - gpt-5.6-terra
-      priority: 3
-      need_vpn: false
+    # - name: modcom
+    #   api_type: openai
+    #   base_url: https://modcon.top/v1
+    #   api_key: "${MODCOM_API_KEY}"
+    #   models:
+    #     - gpt-5.6-luna
+    #     - gpt-5.6-sol
+    #     - gpt-5.6-terra
+    #   priority: 3
+    #   need_vpn: false
     - name: deepseek
       api_type: openai
       base_url: https://api.deepseek.com
