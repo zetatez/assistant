@@ -66,7 +66,27 @@ llm_proxy:
   vision_models:
     - deepseek-v4-flash-vision-exp
   providers:
-    # api_type: openai（默认）| anthropic —— 标记该 provider 上游接口协议
+    - name: opencode
+      api_type: openai
+      base_url: https://opencode.ai/zen/go/v1
+      api_key: "${OPENCODE_API_KEY}"
+      models:
+        - muse-spark-1.3-contributor
+        - glm-5.3-flash
+        - deepseek-v4-flash
+        - deepseek-v4-flash-vision-exp
+      priority: 1
+      need_vpn: false
+    - name: deepseek
+      api_type: openai
+      base_url: https://api.deepseek.com
+      api_key: "${DEEPSEEK_API_KEY}"
+      models:
+        - deepseek-v4-flash
+        - deepseek-v4-pro
+        - deepseek-v4-flash-vision-exp
+      priority: 3
+      need_vpn: false
     # - name: zenmux
     #   api_type: openai
     #   base_url: https://zenmux.ai/api/v1
@@ -129,16 +149,6 @@ llm_proxy:
     #     - gpt-5.6-terra
     #   priority: 3
     #   need_vpn: false
-    - name: deepseek
-      api_type: openai
-      base_url: https://api.deepseek.com
-      api_key: "${DEEPSEEK_API_KEY}"
-      models:
-        - deepseek-v4-flash
-        - deepseek-v4-pro
-        - deepseek-v4-flash-vision-exp
-      priority: 4
-      need_vpn: false
 
 filebrowser:
   root: "/home/shiyi"
