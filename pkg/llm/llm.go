@@ -1,4 +1,4 @@
-package llmproxy
+package llm
 
 import "context"
 
@@ -37,6 +37,8 @@ type ToolDefinition struct {
 }
 
 type ChatRequest struct {
+	// Model 可选。为空时由客户端根据消息内容自动选择：
+	// 文本请求按 TextModels 顺序，图像请求按 VisionModels 顺序（列表顺序即优先级）。
 	Model       string
 	Messages    []Message
 	Tools       []ToolDefinition

@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"assistant/pkg/llmproxy"
+	"assistant/pkg/llm"
 )
 
 const (
@@ -40,8 +40,8 @@ func NewToolExecutor(wikiMgr *IndexManager, logger Logger) *ToolExecutor {
 	}
 }
 
-func (e *ToolExecutor) Definitions() []llmproxy.ToolDefinition {
-	defs := []llmproxy.ToolDefinition{
+func (e *ToolExecutor) Definitions() []llm.ToolDefinition {
+	defs := []llm.ToolDefinition{
 		{
 			Name:        "grep_wiki",
 			Description: "Search the local wiki/knowledge base for relevant information. Use this when the user asks about topics that might be documented locally.",

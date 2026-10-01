@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"assistant/pkg/channel"
-	"assistant/pkg/llmproxy"
+	"assistant/pkg/llm"
 )
 
 type TarsConfig struct {
@@ -27,7 +27,7 @@ type Service struct {
 	logger      Logger
 }
 
-func NewService(ch channel.Channel, llmClient llmproxy.Client, llmModel string, cfg *TarsConfig, logger Logger) *Service {
+func NewService(ch channel.Channel, llmClient llm.Client, cfg *TarsConfig, logger Logger) *Service {
 	if !cfg.Enabled {
 		return &Service{logger: logger}
 	}
@@ -37,7 +37,7 @@ func NewService(ch channel.Channel, llmClient llmproxy.Client, llmModel string, 
 		return &Service{logger: logger}
 	}
 
-	memory := NewMemoryService(expandDir(cfg.DataDir), llmClient, llmModel, logger)
+	memory := NewMemoryService(expandDir(cfg.DataDir), llmClient, logger)
 
 	if cfg.MaxShortTerm > 0 {
 		defaultMaxHistory = cfg.MaxShortTerm
@@ -58,7 +58,7 @@ func NewService(ch channel.Channel, llmClient llmproxy.Client, llmModel string, 
 		Dir:     cfg.WikiDir,
 	})
 
-	handler := NewHandler(ch, memory, llmClient, wikiManager, logger, llmModel, llmTemperature, 120*time.Second)
+	handler := NewHandler(ch, memory, llmClient, wikiManager, logger, llmTemperature, 120*time.Second)
 	handler.Register()
 
 	return &Service{

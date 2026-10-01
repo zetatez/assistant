@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"assistant/pkg/llmproxy"
+	"assistant/pkg/llm"
 )
 
 var (
@@ -159,21 +159,19 @@ func (s *shortTerm) CleanupOldSessions(maxAge time.Duration) int {
 type MemoryService struct {
 	shortTerm   *shortTerm
 	dataDir     string
-	llmClient   llmproxy.Client
-	llmModel    string
+	llmClient   llm.Client
 	logger      Logger
 	msgCounters sync.Map
 	loaded      sync.Map
 }
 
-func NewMemoryService(dataDir string, llmClient llmproxy.Client, llmModel string, logger Logger) *MemoryService {
+func NewMemoryService(dataDir string, llmClient llm.Client, logger Logger) *MemoryService {
 	dir := filepath.Join(dataDir, "tars")
 	os.MkdirAll(dir, 0755)
 	return &MemoryService{
 		shortTerm: newShortTerm(defaultMaxHistory),
 		dataDir:   dir,
 		llmClient: llmClient,
-		llmModel:  llmModel,
 		logger:    logger,
 	}
 }
@@ -194,24 +192,24 @@ func (m *MemoryService) AddAssistantMessage(ctx context.Context, chatID, openID,
 	return nil
 }
 
-func (m *MemoryService) GetContextForLLM(ctx context.Context, chatID string) ([]llmproxy.Message, error) {
+func (m *MemoryService) GetContextForLLM(ctx context.Context, chatID string) ([]llm.Message, error) {
 	m.ensureLoaded(chatID)
-	var messages []llmproxy.Message
-	messages = append(messages, llmproxy.Message{
-		Role:    llmproxy.RoleSystem,
+	var messages []llm.Message
+	messages = append(messages, llm.Message{
+		Role:    llm.RoleSystem,
 		Content: loadSystemPrompt(),
 	})
 	memDoc := m.loadMemoryDoc(chatID)
 	if memDoc != "" {
-		messages = append(messages, llmproxy.Message{
-			Role:    llmproxy.RoleSystem,
+		messages = append(messages, llm.Message{
+			Role:    llm.RoleSystem,
 			Content: "## Long-term Memory (only use if relevant to current question)\n\n" + memDoc,
 		})
 	}
 	return messages, nil
 }
 
-func (m *MemoryService) GetRecentMessages(ctx context.Context, chatID string) ([]llmproxy.Message, error) {
+func (m *MemoryService) GetRecentMessages(ctx context.Context, chatID string) ([]llm.Message, error) {
 	m.ensureLoaded(chatID)
 	msgs := m.shortTerm.GetAll(chatID)
 	return toLLMMessages(msgs), nil
@@ -292,9 +290,8 @@ Rules:
 ## Recent Conversation
 %s`, existing, convo.String())
 
-	resp, err := m.llmClient.Chat(ctx, llmproxy.ChatRequest{
-		Model:       m.llmModel,
-		Messages:    []llmproxy.Message{{Role: llmproxy.RoleUser, Content: prompt}},
+	resp, err := m.llmClient.Chat(ctx, llm.ChatRequest{
+		Messages:    []llm.Message{{Role: llm.RoleUser, Content: prompt}},
 		Temperature: 0.3,
 		MaxTokens:   800,
 	})
@@ -454,17 +451,17 @@ func (m *MemoryService) incMsgCount(chatID string) {
 	}
 }
 
-func toLLMMessages(msgs []ShortTermMessage) []llmproxy.Message {
+func toLLMMessages(msgs []ShortTermMessage) []llm.Message {
 	if len(msgs) == 0 {
 		return nil
 	}
-	out := make([]llmproxy.Message, 0, len(msgs))
+	out := make([]llm.Message, 0, len(msgs))
 	for _, msg := range msgs {
-		role := llmproxy.RoleUser
+		role := llm.RoleUser
 		if msg.Role == "assistant" {
-			role = llmproxy.RoleAI
+			role = llm.RoleAI
 		}
-		out = append(out, llmproxy.Message{Role: role, Content: msg.Content})
+		out = append(out, llm.Message{Role: role, Content: msg.Content})
 	}
 	return out
 }
@@ -473,7 +470,7 @@ func estimateTokens(text string) int {
 	return len(text) / 4
 }
 
-func truncateMessagesByTokens(messages []llmproxy.Message, maxTokens int) []llmproxy.Message {
+func truncateMessagesByTokens(messages []llm.Message, maxTokens int) []llm.Message {
 	if len(messages) == 0 {
 		return messages
 	}
@@ -485,10 +482,10 @@ func truncateMessagesByTokens(messages []llmproxy.Message, maxTokens int) []llmp
 		return messages
 	}
 
-	var systemMsgs []llmproxy.Message
-	var rest []llmproxy.Message
+	var systemMsgs []llm.Message
+	var rest []llm.Message
 	for _, m := range messages {
-		if m.Role == llmproxy.RoleSystem {
+		if m.Role == llm.RoleSystem {
 			systemMsgs = append(systemMsgs, m)
 		} else {
 			rest = append(rest, m)
@@ -501,11 +498,11 @@ func truncateMessagesByTokens(messages []llmproxy.Message, maxTokens int) []llmp
 	}
 
 	remaining := maxTokens - sysTokens
-	kept := make([]llmproxy.Message, 0, len(messages))
+	kept := make([]llm.Message, 0, len(messages))
 	for i := len(rest) - 1; i >= 0; i-- {
 		tokens := estimateTokens(rest[i].Content)
 		if tokens <= remaining {
-			kept = append([]llmproxy.Message{rest[i]}, kept...)
+			kept = append([]llm.Message{rest[i]}, kept...)
 			remaining -= tokens
 		}
 		if remaining <= 0 {

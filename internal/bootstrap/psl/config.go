@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"assistant/internal/news"
-	"assistant/pkg/llmproxy"
+	"assistant/pkg/llm"
 	"assistant/pkg/xlog"
 
 	"github.com/spf13/viper"
@@ -62,7 +62,7 @@ func loadConfig() (*Config, error) {
 type Config struct {
 	App         AppConfig         `mapstructure:"app"`
 	Log         xlog.LogConfig    `mapstructure:"log"`
-	LLMProxy    llmproxy.Config   `mapstructure:"llm_proxy"`
+	LLM         llm.Config        `mapstructure:"llm"`
 	Settings    SettingsConfig    `mapstructure:"settings"`
 	Background  BackgroundConfig  `mapstructure:"background"`
 	FileBrowser FileBrowserConfig `mapstructure:"filebrowser"`
@@ -149,8 +149,8 @@ func (c *Config) applyDefaults() {
 	if c.App.Interface == "" {
 		c.App.Interface = detectDefaultInterface()
 	}
-	if c.LLMProxy.ProxiedModel == "" {
-		c.LLMProxy.ProxiedModel = "assistant"
+	if c.LLM.Timeout == 0 {
+		c.LLM.Timeout = 300
 	}
 	if c.Settings.DefaultMonitor == "" {
 		c.Settings.DefaultMonitor = "eDP-1"
@@ -249,9 +249,7 @@ func (c *Config) resolveEnv() {
 	expand(&c.Settings.Feishu.AppID)
 	expand(&c.Settings.Feishu.AppSecret)
 	expand(&c.Settings.Feishu.ChatID)
-	for i := range c.LLMProxy.Providers {
-		expand(&c.LLMProxy.Providers[i].APIKey)
-	}
+	expand(&c.LLM.APIKey)
 }
 
 func expandEnvPH(s string, envPH *regexp.Regexp) string {

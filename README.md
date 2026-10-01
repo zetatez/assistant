@@ -10,7 +10,6 @@ Author: **zetatez** - [github.com/zetatez/suckless-dwm](https://github.com/zetat
 - **Clipboard**: smart detection (path/URL), translate, format code
 - **File management**: search, browse, upload (web UI)
 - **AI**: LeetCode solving (screenshot), translation, reporting
-- **LLM proxy**: OpenAI/Responses/Anthropic-compatible, multi-provider failover, vision-model auto routing
 - **TARS agent**: Feishu AI bot with memory and ReAct tool loop (`grep_wiki`/`read_wiki`/`web_search`)
 - **News notify**: periodic RSS fetch pushed to dwm status bar
 - **Background**: daemon auto-restart, wallpaper slideshow
@@ -24,13 +23,12 @@ curl -sL https://github.com/zetatez/suckless-dwm/raw/master/assistant/install.sh
 
 ## API
 
-`http://<host>:4321/api/` - Basic Auth for svr/filebrowser, Bearer token for llmproxy.
+`http://<host>:4321/api/` - Basic Auth for svr/filebrowser.
 
 | Prefix             | Description                                    |
 |--------------------|------------------------------------------------|
 | `/api/svr`         | ~50+ system/network/file/AI endpoints          |
 | `/api/filebrowser` | file management + web UI                       |
-| `/api/llmproxy`    | LLM proxy (OpenAI/Responses/Anthropic)         |
 | `/api/health`      | health check                                   |
 
 `scripts/` has one curl script per endpoint.
@@ -40,12 +38,12 @@ curl -sL https://github.com/zetatez/suckless-dwm/raw/master/assistant/install.sh
 ```
 cmd/assistant/           # entrypoint
 internal/
-├── app/modules/         # gin modules: svc, filebrowser, llm, health
+├── app/modules/         # gin modules: svc, filebrowser, health
 ├── bootstrap/psl/       # config, logger, llm client, background tasks
 ├── news/                # news notify service
 └── tars/                # Feishu AI agent (react, memory, tools)
 pkg/
-├── llmproxy/            # LLM client + multi-provider proxy
+├── llm/                 # OpenAI-compatible LLM client (single provider)
 ├── aiapi/               # structured AI APIs (translator, reporter, ...)
 ├── news_collector/      # RSS fetcher
 ├── channel/feishu/      # Feishu messaging
@@ -57,7 +55,7 @@ config.default.yaml      # config template
 
 ## Configuration
 
-See `config.default.yaml`. Key sections: `app`, `llm_proxy` (providers + vision_models), `tars` (wiki_search, web_search), `news`, `background`, `filebrowser`.
+See `config.default.yaml`. Key sections: `app`, `llm` (single provider base_url/api_key + text/vision models), `tars` (wiki_search, web_search), `news`, `background`, `filebrowser`.
 
 ## Running
 

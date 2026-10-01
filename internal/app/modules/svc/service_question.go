@@ -10,7 +10,7 @@ import (
 
 	"assistant/internal/bootstrap/psl"
 	"assistant/pkg/dwmblocknotify"
-	"assistant/pkg/llmproxy"
+	"assistant/pkg/llm"
 )
 
 var questionSystemPrompt = `你是乐于助人的全能助手，请详细、准确、条理清晰地回答用户的问题。
@@ -42,7 +42,7 @@ func (s *Service) SolveQuestion() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	resp, err := llmproxy.Complete(ctx, client, text, llmproxy.WithSystemPrompt(questionSystemPrompt), llmproxy.WithTemperature(0.3))
+	resp, err := llm.Complete(ctx, client, text, llm.WithSystemPrompt(questionSystemPrompt), llm.WithTemperature(0.3))
 	if err != nil {
 		return fmt.Errorf("LLM request: %w", err)
 	}
@@ -86,10 +86,10 @@ func (s *Service) SolveQuestionScreenshot() error {
 
 	prompt := "请识别截图中显示的内容并回答其中的问题。"
 
-	resp, err := llmproxy.Complete(ctx, client, prompt,
-		llmproxy.WithSystemPrompt(questionSystemPrompt),
-		llmproxy.WithTemperature(0.3),
-		llmproxy.WithImageBase64(imgBase64),
+	resp, err := llm.Complete(ctx, client, prompt,
+		llm.WithSystemPrompt(questionSystemPrompt),
+		llm.WithTemperature(0.3),
+		llm.WithImageBase64(imgBase64),
 	)
 	if err != nil {
 		return fmt.Errorf("LLM request: %w", err)

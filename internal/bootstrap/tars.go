@@ -35,7 +35,7 @@ func InitTars(ctx context.Context) *tars.Service {
 		WebSearchEnabled: cfg.Tars.WebSearch.Enabled,
 	}
 
-	svc := tars.NewService(ch, psl.GetLLMClient(), cfg.LLMProxy.ProxiedModel, tarsCfg, logger)
+	svc := tars.NewService(ch, psl.GetLLMClient(), tarsCfg, logger)
 
 	svc.Start(ctx)
 

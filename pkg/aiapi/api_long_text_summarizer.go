@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"assistant/pkg/aiapi/prompts"
-	"assistant/pkg/llmproxy"
+	"assistant/pkg/llm"
 )
 
 type LongTextSummarizer struct {
 	engine *Engine
 }
 
-func NewLongTextSummarizer(client llmproxy.Client) *LongTextSummarizer {
+func NewLongTextSummarizer(client llm.Client) *LongTextSummarizer {
 	return &LongTextSummarizer{engine: NewEngine(client)}
 }
 

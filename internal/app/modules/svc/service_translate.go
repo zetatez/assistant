@@ -39,7 +39,7 @@ func (s *Service) TranslateClipboard() (string, error) {
 	targetLang := detectTargetLang(text)
 
 	translator := aiapi.NewTranslator(client)
-	timeout := psl.GetConfig().LLMProxy.Timeout
+	timeout := psl.GetConfig().LLM.Timeout
 	if timeout <= 0 {
 		timeout = 60
 	}

@@ -1,29 +1,5 @@
 basePath: /
 definitions:
-  llm.anthropicMsg:
-    properties:
-      content:
-        type: string
-      reasoning_content:
-        type: string
-      role:
-        type: string
-    type: object
-  llm.anthropicReq:
-    properties:
-      max_tokens:
-        type: integer
-      messages:
-        items:
-          $ref: '#/definitions/llm.anthropicMsg'
-        type: array
-      model:
-        type: string
-      stream:
-        type: boolean
-      system:
-        type: string
-    type: object
   response.Response:
     properties:
       code:
@@ -334,74 +310,6 @@ paths:
       summary: 健康检查
       tags:
       - 健康检查
-  /api/llmproxy/status:
-    get:
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 查看供应商状态
-      tags:
-      - LLM代理
-  /api/llmproxy/v1/chat/completions:
-    post:
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: OpenAI 格式聊天补全
-      tags:
-      - LLM代理
-  /api/llmproxy/v1/messages:
-    post:
-      parameters:
-      - description: Anthropic 格式请求体
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/llm.anthropicReq'
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Anthropic 格式聊天补全
-      tags:
-      - LLM代理
-  /api/llmproxy/v1/models:
-    get:
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 列出可用模型
-      tags:
-      - LLM代理
-  /api/llmproxy/v1/models/{model}:
-    get:
-      parameters:
-      - description: 模型ID
-        in: path
-        name: model
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 查询模型详情
-      tags:
-      - LLM代理
   /api/svr/convert-datetime:
     post:
       consumes:

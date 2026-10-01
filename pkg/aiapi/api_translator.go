@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	"assistant/pkg/aiapi/prompts"
-	"assistant/pkg/llmproxy"
+	"assistant/pkg/llm"
 )
 
 type Translator struct {
 	engine *Engine
 }
 
-func NewTranslator(client llmproxy.Client) *Translator {
+func NewTranslator(client llm.Client) *Translator {
 	return &Translator{engine: NewEngine(client)}
 }
 

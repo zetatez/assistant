@@ -11,7 +11,6 @@ import (
 	"assistant/internal/app/module"
 	"assistant/internal/app/modules/filebrowser"
 	"assistant/internal/app/modules/health"
-	"assistant/internal/app/modules/llm"
 	"assistant/internal/app/modules/svc"
 	"assistant/internal/bootstrap/psl"
 
@@ -39,7 +38,6 @@ func Run(ctx context.Context) error {
 		health.NewModule(),
 		svc.NewModule(),
 		filebrowser.NewModule(),
-		llm.NewModule(),
 	}
 
 	api := r.Group("/api")

@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	"assistant/pkg/aiapi/prompts"
-	"assistant/pkg/llmproxy"
+	"assistant/pkg/llm"
 )
 
 type SQLOptimizer struct {
 	engine *Engine
 }
 
-func NewSQLOptimizer(client llmproxy.Client) *SQLOptimizer {
+func NewSQLOptimizer(client llm.Client) *SQLOptimizer {
 	return &SQLOptimizer{engine: NewEngine(client)}
 }
 
