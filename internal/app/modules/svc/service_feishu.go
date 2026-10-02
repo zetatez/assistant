@@ -23,9 +23,9 @@ func (s *Service) SendToFeishu() error {
 	}
 
 	cfg := psl.GetConfig().Settings
-	appID := cfg.Feishu.AppID
-	appSecret := cfg.Feishu.AppSecret
-	chatID := cfg.Feishu.ChatID
+	appID := cfg.FeishuAppID
+	appSecret := cfg.FeishuAppSecret
+	chatID := cfg.FeishuChatID
 	if appID == "" || appSecret == "" || chatID == "" {
 		return fmt.Errorf("missing feishu config: app_id, app_secret, chat_id")
 	}

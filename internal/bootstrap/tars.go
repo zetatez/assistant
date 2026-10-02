@@ -16,12 +16,12 @@ func InitTars(ctx context.Context) *tars.Service {
 
 	logger := psl.GetLogger()
 
-	if cfg.Settings.Feishu.AppID == "" || cfg.Settings.Feishu.AppSecret == "" {
+	if cfg.Settings.FeishuAppID == "" || cfg.Settings.FeishuAppSecret == "" {
 		logger.Error("tars: feishu app_id or app_secret is empty, skipping tars module")
 		return nil
 	}
 
-	ch := feishu.NewService(cfg.Settings.Feishu.AppID, cfg.Settings.Feishu.AppSecret, feishu.WithLogger(logger))
+	ch := feishu.NewService(cfg.Settings.FeishuAppID, cfg.Settings.FeishuAppSecret, feishu.WithLogger(logger))
 
 	tarsCfg := &tars.TarsConfig{
 		Enabled:          cfg.Tars.Enabled,

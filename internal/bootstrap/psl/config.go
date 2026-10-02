@@ -60,14 +60,13 @@ func loadConfig() (*Config, error) {
 }
 
 type Config struct {
-	App         AppConfig         `mapstructure:"app"`
-	Log         xlog.LogConfig    `mapstructure:"log"`
-	LLM         llm.Config        `mapstructure:"llm"`
-	Settings    SettingsConfig    `mapstructure:"settings"`
-	Background  BackgroundConfig  `mapstructure:"background"`
-	FileBrowser FileBrowserConfig `mapstructure:"filebrowser"`
-	News        news.Config       `mapstructure:"news"`
-	Tars        TarsConfig        `mapstructure:"tars"`
+	App        AppConfig        `mapstructure:"app"`
+	Log        xlog.LogConfig   `mapstructure:"log"`
+	LLM        llm.Config       `mapstructure:"llm"`
+	Settings   SettingsConfig   `mapstructure:"settings"`
+	Background BackgroundConfig `mapstructure:"background"`
+	News       news.Config      `mapstructure:"news"`
+	Tars       TarsConfig       `mapstructure:"tars"`
 }
 
 type TarsConfig struct {
@@ -94,13 +93,6 @@ type WebSearchConfig struct {
 	Enabled bool `mapstructure:"enabled"`
 }
 
-type FileBrowserConfig struct {
-	Root   string   `mapstructure:"root"`
-	Allow  []string `mapstructure:"allow"`
-	Deny   []string `mapstructure:"deny"`
-	Public []string `mapstructure:"public"`
-}
-
 type AppConfig struct {
 	Name         string `mapstructure:"name"`
 	Host         string `mapstructure:"host"`
@@ -111,21 +103,17 @@ type AppConfig struct {
 }
 
 type SettingsConfig struct {
-	DefaultMonitor         string       `mapstructure:"default_monitor"`
-	DirSnip                string       `mapstructure:"dir_snip"`
-	DirWallpaper           string       `mapstructure:"dir_wallpaper"`
-	DirWorkingLogbook      string       `mapstructure:"dir_working_logbook"`
-	PathKeyboardBrightness string       `mapstructure:"path_keyboard_brightness"`
-	PathSSHSecret          string       `mapstructure:"path_ssh_secret"`
-	DefaultTerminal        string       `mapstructure:"default_terminal"`
-	VPN                    string       `mapstructure:"vpn"`
-	Feishu                 FeishuConfig `mapstructure:"feishu"`
-}
-
-type FeishuConfig struct {
-	AppID     string `mapstructure:"app_id"`
-	AppSecret string `mapstructure:"app_secret"`
-	ChatID    string `mapstructure:"chat_id"`
+	DefaultMonitor         string `mapstructure:"default_monitor"`
+	DirSnip                string `mapstructure:"dir_snip"`
+	DirWallpaper           string `mapstructure:"dir_wallpaper"`
+	DirWorkingLogbook      string `mapstructure:"dir_working_logbook"`
+	PathKeyboardBrightness string `mapstructure:"path_keyboard_brightness"`
+	PathSSHSecret          string `mapstructure:"path_ssh_secret"`
+	DefaultTerminal        string `mapstructure:"default_terminal"`
+	VPN                    string `mapstructure:"vpn"`
+	FeishuAppID            string `mapstructure:"feishu_app_id"`
+	FeishuAppSecret        string `mapstructure:"feishu_app_secret"`
+	FeishuChatID           string `mapstructure:"feishu_chat_id"`
 }
 
 type BackgroundConfig struct {
@@ -170,13 +158,6 @@ func (c *Config) applyDefaults() {
 	if c.Settings.DirSnip == "" {
 		c.Settings.DirSnip = "~/git/obsidian/.snippets"
 	}
-	if c.FileBrowser.Root == "" {
-		home, _ := os.UserHomeDir()
-		c.FileBrowser.Root = home
-	}
-	if len(c.FileBrowser.Deny) == 0 {
-		c.FileBrowser.Deny = []string{".ssh", ".gnupg", ".config/assistant"}
-	}
 	if len(c.Background.Procs) == 0 {
 		home, _ := os.UserHomeDir()
 		c.Background.Procs = []BackgroundProc{
@@ -211,7 +192,6 @@ func (c *Config) expandPaths() error {
 		&c.Settings.PathSSHSecret,
 		&c.Settings.PathKeyboardBrightness,
 		&c.Settings.DirSnip,
-		&c.FileBrowser.Root,
 		&c.Tars.DataDir,
 		&c.Tars.Wiki.Dir,
 	} {
@@ -246,9 +226,9 @@ func (c *Config) Validate() error {
 func (c *Config) resolveEnv() {
 	envPH := regexp.MustCompile(`\$\{(\w+)\}`)
 	expand := func(p *string) { *p = expandEnvPH(*p, envPH) }
-	expand(&c.Settings.Feishu.AppID)
-	expand(&c.Settings.Feishu.AppSecret)
-	expand(&c.Settings.Feishu.ChatID)
+	expand(&c.Settings.FeishuAppID)
+	expand(&c.Settings.FeishuAppSecret)
+	expand(&c.Settings.FeishuChatID)
 	expand(&c.LLM.APIKey)
 }
 
