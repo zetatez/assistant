@@ -24,10 +24,9 @@ settings:
   dir_working_logbook: "~/git/working/logbook"
   path_keyboard_brightness: "/sys/class/leds/tpacpi::kbd_backlight/brightness"
   path_ssh_secret: "~/.ssh/my.ssh.json"
-  feishu:
-    app_id: "${FEISHU_APP_ID}"
-    app_secret: "${FEISHU_APP_SECRET}"
-    chat_id: "${FEISHU_CHAT_ID}"
+  feishu_app_id: "${FEISHU_APP_ID}"
+  feishu_app_secret: "${FEISHU_APP_SECRET}"
+  feishu_chat_id: "${FEISHU_CHAT_ID}"
 
 background:
   enabled: true
@@ -64,22 +63,6 @@ llm:
   vision_models:
     - deepseek-v4-flash-vision-exp
 
-filebrowser:
-  root: "/home/shiyi"
-  allow:
-    - "Documents"
-    - "Downloads"
-    - "Music"
-    - "Pictures"
-    - "Videos"
-    - "git"
-    - "x"
-    - ".config"
-  deny:
-    - ".ssh"
-    - ".gnupg"
-  public:
-    - "x"
 
 tars:
   enabled: true
