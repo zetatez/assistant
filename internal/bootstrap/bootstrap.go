@@ -31,8 +31,6 @@ func Run(ctx context.Context) error {
 
 	news.NewService(psl.GetConfig().News, psl.GetConfig().Settings.VPN, psl.GetLogger()).Start(ctx)
 
-	InitTars(ctx)
-
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

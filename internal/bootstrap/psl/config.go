@@ -66,31 +66,6 @@ type Config struct {
 	Settings   SettingsConfig   `mapstructure:"settings"`
 	Background BackgroundConfig `mapstructure:"background"`
 	News       news.Config      `mapstructure:"news"`
-	Tars       TarsConfig       `mapstructure:"tars"`
-}
-
-type TarsConfig struct {
-	Enabled     bool            `mapstructure:"enabled"`
-	DataDir     string          `mapstructure:"data_dir"`
-	Temperature float32         `mapstructure:"temperature"`
-	Memory      MemoryConfig    `mapstructure:"memory"`
-	Wiki        WikiConfig      `mapstructure:"wiki_search"`
-	WebSearch   WebSearchConfig `mapstructure:"web_search"`
-}
-
-type MemoryConfig struct {
-	MaxHistoryMB   int `mapstructure:"max_history_mb"`
-	SummarizeEvery int `mapstructure:"memory_summarize_every"`
-	MaxShortTerm   int `mapstructure:"max_short_term"`
-}
-
-type WikiConfig struct {
-	Enabled bool   `mapstructure:"enabled"`
-	Dir     string `mapstructure:"dir"`
-}
-
-type WebSearchConfig struct {
-	Enabled bool `mapstructure:"enabled"`
 }
 
 type AppConfig struct {
@@ -107,8 +82,8 @@ type SettingsConfig struct {
 	DirSnip                string `mapstructure:"dir_snip"`
 	DirWallpaper           string `mapstructure:"dir_wallpaper"`
 	DirWorkingLogbook      string `mapstructure:"dir_working_logbook"`
-	PathKeyboardBrightness string `mapstructure:"path_keyboard_brightness"`
-	PathSSHSecret          string `mapstructure:"path_ssh_secret"`
+	PathKeyboardBrightness string `mapstructure:"filepath_keyboard_brightness"`
+	PathSSHSecret          string `mapstructure:"filepath_ssh_secret"`
 	DefaultTerminal        string `mapstructure:"default_terminal"`
 	VPN                    string `mapstructure:"vpn"`
 	FeishuAppID            string `mapstructure:"feishu_app_id"`
@@ -166,21 +141,6 @@ func (c *Config) applyDefaults() {
 			{Name: "dunst", Command: "dunst"},
 		}
 	}
-	if c.Tars.DataDir == "" {
-		c.Tars.DataDir = "~/.config/assistant/data"
-	}
-	if c.Tars.Temperature == 0 {
-		c.Tars.Temperature = 0.7
-	}
-	if c.Tars.Memory.MaxHistoryMB == 0 {
-		c.Tars.Memory.MaxHistoryMB = 64
-	}
-	if c.Tars.Memory.SummarizeEvery == 0 {
-		c.Tars.Memory.SummarizeEvery = 10
-	}
-	if c.Tars.Memory.MaxShortTerm == 0 {
-		c.Tars.Memory.MaxShortTerm = 64
-	}
 }
 
 func (c *Config) expandPaths() error {
@@ -192,8 +152,6 @@ func (c *Config) expandPaths() error {
 		&c.Settings.PathSSHSecret,
 		&c.Settings.PathKeyboardBrightness,
 		&c.Settings.DirSnip,
-		&c.Tars.DataDir,
-		&c.Tars.Wiki.Dir,
 	} {
 		*p = expandHomePath(*p, home)
 	}

@@ -8,8 +8,7 @@ Author: **zetatez** - [github.com/zetatez/suckless-dwm](https://github.com/zetat
 
 - **System control**: volume, brightness, display layout, power menu, WiFi/Bluetooth/SSH
 - **Clipboard**: smart detection (path/URL), translate, format code
-- **File management**: search, browse, upload (web UI)- **AI**: LeetCode solving (screenshot), translation, reporting
-- **TARS agent**: Feishu AI bot with memory and ReAct tool loop (`grep_wiki`/`read_wiki`/`web_search`)
+- **AI**: LeetCode solving (screenshot), translation, reporting
 - **News notify**: periodic RSS fetch pushed to dwm status bar
 - **Background**: daemon auto-restart, wallpaper slideshow
 
@@ -38,13 +37,11 @@ cmd/assistant/           # entrypoint
 internal/
 ├── app/modules/         # gin modules: svc, health
 ├── bootstrap/psl/       # config, logger, llm client, background tasks
-├── news/                # news notify service
-└── tars/                # Feishu AI agent (react, memory, tools)
+└── news/                # news notify service
 pkg/
 ├── llm/                 # OpenAI-compatible LLM client (single provider)
 ├── aiapi/               # structured AI APIs (translator, reporter, ...)
 ├── news_collector/      # RSS fetcher
-├── channel/feishu/      # Feishu messaging
 ├── dwmblocknotify/      # dwm status bar notifications
 └── utils/, xlog/, ...   # utilities
 scripts/                 # curl scripts
@@ -53,7 +50,7 @@ config.default.yaml      # config template
 
 ## Configuration
 
-See `config.default.yaml`. Key sections: `app`, `llm` (single provider base_url/api_key + text/vision models), `tars` (wiki_search, web_search), `news`, `background`.
+See `config.default.yaml`. Key sections: `app`, `llm` (single provider base_url/api_key + text/vision models), `news`, `background`.
 
 ## Running
 

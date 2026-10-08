@@ -1,12 +1,11 @@
 #!/bin/bash
 
 URLs=(
-  # "https://platform.minimaxi.com/subscribe/token-plan"
   "https://platform.deepseek.com/usage"
-  "https://www.volcengine.com/activity/agentplan"
-  # "https://www.volcengine.com/activity/codingplan"
-  "https://console.volcengine.com/ark/region:cn-beijing/subscription/coding-plan"
-  "https://console.volcengine.com/ark/region:cn-beijing/subscription/agent-plan"
+  "https://opencode.ai/workspace/wrk_01KKS0RMCWW2C2FH33RSMBDTHK/go"
+  # "https://www.volcengine.com/activity/agentplan"
+  # "https://console.volcengine.com/ark/region:cn-beijing/subscription/coding-plan"
+  # "https://console.volcengine.com/ark/region:cn-beijing/subscription/agent-plan"
 )
 
 for url in ${URLs[@]}; do

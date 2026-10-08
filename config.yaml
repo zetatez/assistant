@@ -1,35 +1,65 @@
+# ============================================================
+# Assistant runtime config (same structure as config.default.yaml)
+# ${ENV} placeholders are resolved from environment variables (empty if unset).
+# ============================================================
+
+# ── Server ─────────────────────────────────────────────
 app:
-  name: assistant
-  host: 0.0.0.0
-  port: 4321
-  root_username: admin
-  root_password: AAaa00__
+  name: assistant        # service name
+  host: 0.0.0.0          # listen address
+  port: 4321             # listen port
+  interface: ""          # default network interface, auto-detected if empty
+  root_username: admin   # auth username
+  root_password: AAaa00__  # auth password, change after deployment!
 
+# ── Logging ────────────────────────────────────────────
 log:
-  level: debug
+  level: debug           # debug | info | warn | error
   filename: ~/.config/assistant/logs/assistant.log
-  max_size_mb: 8
-  max_backups: 7
-  max_age_days: 7
-  compress: true
-  format: text
-  console: true
+  max_size_mb: 8         # max size per log file (MB)
+  max_backups: 7         # number of backups to keep
+  max_age_days: 7        # number of days to keep backups
+  compress: true         # compress archived logs
+  format: text           # text | json
+  console: true          # also write to console
 
+# ── System Settings ────────────────────────────────────
 settings:
-  vpn: "socks5://127.0.0.1:7891"
+  # Network
+  vpn: "socks5://127.0.0.1:7891"   # upstream proxy (used by news and other outbound features)
+
+  # Desktop
   default_monitor: "eDP-1"
   default_terminal: "st"
+
+  # Paths
   dir_snip: "~/git/obsidian/.snippets"
   dir_wallpaper: "~/Pictures/wallpapers"
   dir_working_logbook: "~/git/working/logbook"
-  path_keyboard_brightness: "/sys/class/leds/tpacpi::kbd_backlight/brightness"
-  path_ssh_secret: "~/.ssh/my.ssh.json"
+  filepath_keyboard_brightness: "/sys/class/leds/tpacpi::kbd_backlight/brightness"
+  filepath_ssh_secret: "~/.ssh/my.ssh.json"
+
+  # Feishu (used by /api/svr/send-to-feishu)
   feishu_app_id: "${FEISHU_APP_ID}"
   feishu_app_secret: "${FEISHU_APP_SECRET}"
   feishu_chat_id: "${FEISHU_CHAT_ID}"
 
+# ── LLM (OpenAI-compatible, single provider) ───────────
+llm:
+  base_url: https://api.deepseek.com   # upstream Base URL
+  api_key: "${DEEPSEEK_API_KEY}"       # upstream API key
+  timeout: 300                         # upstream request timeout (seconds)
+  temperature: 0.3                     # default sampling temperature
+  # Model list order = priority: earlier models are preferred, failover moves to the next
+  text_models:
+    - deepseek-v4-flash
+  vision_models:
+    - deepseek-v4-flash-vision-exp
+
+# ── Background Daemons ─────────────────────────────────
 background:
   enabled: true
+  # name: process name; command: launch command; precursor: prerequisite process name
   procs:
     - name: dwmblocks
       command: dwmblocks
@@ -53,33 +83,9 @@ background:
       command: dunst
       precursor: dwm
 
-llm:
-  base_url: https://api.deepseek.com
-  api_key: "${DEEPSEEK_API_KEY}"
-  timeout: 300
-  temperature: 0.3
-  text_models:
-    - deepseek-v4-flash
-  vision_models:
-    - deepseek-v4-flash-vision-exp
-
-
-tars:
-  enabled: true
-  data_dir: "~/.config/assistant/data"
-  temperature: 0.3
-  memory:
-    max_history_mb: 64
-    max_short_term: 64
-    memory_summarize_every: 16
-  wiki_search:
-    enabled: true
-    dir: "~/.config/assistant/wiki"
-  web_search:
-    enabled: true
-
+# ── News Feed ──────────────────────────────────────────
 news:
   enabled: false
-  interval: 30m
-  notify_interval: 8s
-  notify_ttl: 4s
+  interval: 30m          # fetch interval
+  notify_interval: 8s    # notification throttle
+  notify_ttl: 4s         # dwm status bar display duration

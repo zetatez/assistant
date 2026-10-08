@@ -19,7 +19,6 @@ install: swag build
 	chmod +x ~/.config/assistant/scripts/*
 	mkdir -p ~/.config/assistant/logs
 	mkdir -p ~/.config/assistant
-	cp -f tars.sys.prompt.md ~/.config/assistant/tars.sys.prompt.md
 	cp -f config.yaml ~/.config/assistant/config.yaml
 	sed -i "s|filename:.*|filename: $$HOME/.config/assistant/logs/assistant.log|" ~/.config/assistant/config.yaml
 	mkdir -p ~/.config/systemd/user
