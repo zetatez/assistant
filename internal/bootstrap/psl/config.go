@@ -104,7 +104,7 @@ type BackgroundProc struct {
 
 func (c *Config) applyDefaults() {
 	if c.App.Host == "" {
-		c.App.Host = "127.0.0.1"
+		c.App.Host = "0.0.0.0"
 	}
 	if c.App.Port == 0 {
 		c.App.Port = 4321
