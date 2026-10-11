@@ -1,0 +1,6 @@
+#!/bin/bash
+# Trigger vim popup editing for the currently focused input box.
+# Run this as a dwm shortcut; blocks until editing is done and the text is entered.
+
+curl -s -X POST http://127.0.0.1:4321/api/svr/vim-edit-input \
+  -u "admin:AAaa00__"

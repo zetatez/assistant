@@ -863,6 +863,17 @@ paths:
       summary: 翻译剪贴板内容
       tags:
       - 工具
+  /api/svr/vim-edit-input:
+    post:
+      description: 在当前聚焦的输入框弹出 vim 编辑窗口，保存退出后自动将内容输入回输入框（非 ASCII 内容走剪贴板 + Ctrl+V）
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Vim 弹窗编辑并输入
+      tags:
+      - 工具
 schemes:
 - http
 swagger: "2.0"

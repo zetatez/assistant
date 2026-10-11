@@ -98,6 +98,7 @@ func (h *Handler) Register(r *gin.RouterGroup) {
 	r.POST("/toggle-rec-webcam", h.ToggleRecWebcam)
 	r.POST("/toggle-tty-clock", h.ToggleTTYClock)
 	r.POST("/translate-clipboard", h.TranslateClipboard)
+	r.POST("/vim-edit-input", h.VimEditInput)
 }
 
 // Power godoc
@@ -878,4 +879,14 @@ func (h *Handler) Screenshot(c *gin.Context) {
 		return
 	}
 	response.Ok(c, gin.H{"path": path})
+}
+
+// VimEditInput godoc
+// @Summary Vim 弹窗编辑并输入
+// @Description 在当前聚焦的输入框弹出 vim 编辑窗口，保存退出后自动将内容输入回输入框（非 ASCII 内容走剪贴板 + Ctrl+V）
+// @Tags 工具
+// @Success 200 {object} response.Response
+// @Router /api/svr/vim-edit-input [post]
+func (h *Handler) VimEditInput(c *gin.Context) {
+	h.trigger(c, "vim-edit-input", h.svc.VimEditInput)
 }
