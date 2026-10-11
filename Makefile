@@ -23,7 +23,7 @@ install: swag build
 	sed -i "s|filename:.*|filename: $$HOME/.config/assistant/logs/assistant.log|" ~/.config/assistant/config.yaml
 	mkdir -p ~/.config/systemd/user
 	sed "s|%h|$$HOME|g" assistant.service > ~/.config/systemd/user/assistant.service
-	systemctl --user daemon-reload
+	systemctl --user daemon-reload 2>/dev/null || true
 	systemctl --user enable --now assistant 2>/dev/null || true
 	@echo "installed"
 
