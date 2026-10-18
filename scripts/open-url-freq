@@ -2,10 +2,8 @@
 
 URLs=(
   "https://platform.deepseek.com/usage"
+  "https://zenmux.ai/platform/subscription"
   "https://opencode.ai/workspace/wrk_01KKS0RMCWW2C2FH33RSMBDTHK/go"
-  # "https://www.volcengine.com/activity/agentplan"
-  # "https://console.volcengine.com/ark/region:cn-beijing/subscription/coding-plan"
-  # "https://console.volcengine.com/ark/region:cn-beijing/subscription/agent-plan"
 )
 
 for url in ${URLs[@]}; do
@@ -19,4 +17,3 @@ for url in ${URLs[@]}; do
 }
 ENDJSON
 done
-
