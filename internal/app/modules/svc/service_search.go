@@ -1,12 +1,10 @@
 package svc
 
 import (
-	"assistant/pkg/utils"
-	"fmt"
-	"os"
-	"path"
 	"sort"
 	"strings"
+
+	"assistant/internal/platform"
 )
 
 func (s *Service) Search() error {
@@ -15,17 +13,16 @@ func (s *Service) Search() error {
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	list := strings.Join(names, "\n")
-	tmpf := path.Join(os.TempDir(), "assistant-search-actions")
-	if err := os.WriteFile(tmpf, []byte(list), 0o644); err != nil {
-		return fmt.Errorf("write action list: %w", err)
+
+	action, err := platform.Get().Select("search", names)
+	if err != nil {
+		return err
 	}
-	out, _, err := utils.RunScript("bash", fmt.Sprintf("rofi -dmenu -p 'search' < %s", tmpf))
-	_ = os.Remove(tmpf)
-	if err != nil || strings.TrimSpace(out) == "" {
+	action = strings.TrimSpace(action)
+	if action == "" {
 		return nil
 	}
-	return s.runAction(strings.TrimSpace(out))
+	return s.runAction(action)
 }
 
 func (s *Service) runAction(action string) error {
@@ -61,24 +58,29 @@ var searchActions = map[string]func(*Service) error{
 	"snip create":                    func(s *Service) error { return s.SnipCreate("") },
 	"translate clipboard":            func(s *Service) error { _, err := s.TranslateClipboard(); return err },
 	"search books online": func(s *Service) error {
-		q, err := s.rofiPrompt("search books")
+		q, err := s.promptInput("search books")
 		if err != nil || q == "" {
 			return err
 		}
 		return s.SearchBooksOnline(q)
 	},
 	"search videos online": func(s *Service) error {
-		q, err := s.rofiPrompt("search videos")
+		q, err := s.promptInput("search videos")
 		if err != nil || q == "" {
 			return err
 		}
 		return s.SearchVideosOnline(q)
 	},
 	"search from web": func(s *Service) error {
-		q, err := s.rofiPrompt("search web")
+		q, err := s.promptInput("search web")
 		if err != nil || q == "" {
 			return err
 		}
 		return s.SearchWeb(q)
 	},
+}
+
+// promptInput asks for a free-text value using the platform picker.
+func (s *Service) promptInput(prompt string) (string, error) {
+	return platform.Get().Input(prompt, false)
 }

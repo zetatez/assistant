@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"syscall"
 	"time"
 )
@@ -29,7 +30,7 @@ func StartScript(lang, script string) error {
 	cmd := exec.Command(args[0], append(args[1:], script)...)
 	cmd.Env = os.Environ()
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	if os.Getenv("DISPLAY") == "" {
+	if runtime.GOOS == OSLinux && os.Getenv("DISPLAY") == "" {
 		cmd.Env = append(cmd.Env, "DISPLAY=:0")
 	}
 	if err := cmd.Start(); err != nil {
@@ -49,7 +50,7 @@ func RunScript(lang, script string) (stdout, stderr string, err error) {
 	cmd := exec.Command(args[0], append(args[1:], script)...)
 	cmd.Stdout, cmd.Stderr = &outBuf, &errBuf
 	cmd.Env = os.Environ()
-	if os.Getenv("DISPLAY") == "" {
+	if runtime.GOOS == OSLinux && os.Getenv("DISPLAY") == "" {
 		cmd.Env = append(cmd.Env, "DISPLAY=:0")
 	}
 	err = cmd.Run()

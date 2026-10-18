@@ -1,7 +1,6 @@
 package svc
 
 import (
-	"assistant/pkg/utils"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,20 +8,8 @@ import (
 	"strings"
 
 	"assistant/internal/bootstrap/psl"
+	"assistant/internal/platform"
 )
-
-func (s *Service) ConnectSSH(host string, port int, user, password string) error {
-	if port <= 0 {
-		port = 22
-	}
-	if user == "" {
-		user = "root"
-	}
-	term := psl.GetConfig().Settings.DefaultTerminal
-	cmd := fmt.Sprintf("%s -e sshpass -p '%s' ssh -o 'StrictHostKeyChecking no' -p %d %s@%s &", term, password, port, user, host)
-	_, _, err := utils.RunScript("bash", cmd)
-	return err
-}
 
 func (s *Service) SysSSHConnect() error {
 	homeDir, err := os.UserHomeDir()
@@ -32,14 +19,15 @@ func (s *Service) SysSSHConnect() error {
 	sshConfigPath := psl.GetConfig().Settings.PathSSHSecret
 	sshConfigPath = strings.ReplaceAll(sshConfigPath, "~", homeDir)
 
+	saved := map[string]struct {
+		Host     string `json:"host"`
+		User     string `json:"user"`
+		Password string `json:"password"`
+		Desc     string `json:"desc"`
+	}{}
+
 	var lines []string
 	if data, err := os.ReadFile(sshConfigPath); err == nil {
-		saved := map[string]struct {
-			Host     string `json:"host"`
-			User     string `json:"user"`
-			Password string `json:"password"`
-			Desc     string `json:"desc"`
-		}{}
 		if err := json.Unmarshal(data, &saved); err == nil {
 			for _, entry := range saved {
 				line := fmt.Sprintf("%s@%s  # %s", entry.User, entry.Host, entry.Desc)
@@ -65,12 +53,11 @@ func (s *Service) SysSSHConnect() error {
 		return fmt.Errorf("no SSH entries found")
 	}
 
-	input := strings.Join(lines, "\n")
-	out, _, err := utils.RunScript("bash", fmt.Sprintf("echo '%s' | rofi -dmenu -p 'ssh to'", strings.ReplaceAll(input, "'", "'\"'\"'")))
-	if err != nil || strings.TrimSpace(out) == "" {
-		return nil
+	choice, err := platform.Get().Select("ssh to", lines)
+	if err != nil || strings.TrimSpace(choice) == "" {
+		return err
 	}
-	choice := strings.TrimSpace(out)
+	choice = strings.TrimSpace(choice)
 
 	host, user, password := "", "", ""
 	parts := strings.Fields(choice)
@@ -93,27 +80,18 @@ func (s *Service) SysSSHConnect() error {
 		user = "root"
 	}
 
-	if data, err := os.ReadFile(sshConfigPath); err == nil {
-		saved := map[string]struct {
-			Host     string `json:"host"`
-			User     string `json:"user"`
-			Password string `json:"password"`
-			Desc     string `json:"desc"`
-		}{}
-		if err := json.Unmarshal(data, &saved); err == nil {
-			if entry, ok := saved[user+"@"+host]; ok {
-				password = entry.Password
-			}
-		}
+	if entry, ok := saved[user+"@"+host]; ok {
+		password = entry.Password
 	}
 
 	if password == "" {
-		out2, _, err := utils.RunScript("bash", "rofi -dmenu -p 'password' < /dev/null")
+		out2, err := platform.Get().Input("password", true)
 		if err != nil || strings.TrimSpace(out2) == "" {
-			return nil
+			return err
 		}
 		password = strings.TrimSpace(out2)
 	}
 
-	return s.ConnectSSH(host, 22, user, password)
+	term := psl.GetConfig().Settings.DefaultTerminal
+	return platform.Get().SSHConnect(term, user, host, password, 22)
 }

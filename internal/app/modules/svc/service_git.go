@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"assistant/internal/bootstrap/psl"
+	"assistant/internal/platform"
 	"assistant/pkg/utils"
 )
 
@@ -22,10 +22,14 @@ func (s *Service) GitLogShow(dir string) error {
 		return fmt.Errorf("open git repo: %w", err)
 	}
 
+	script := fmt.Sprintf(`cd %s && sha=$(git log --pretty=oneline | fzf --prompt='git show>' --ansi --preview 'git show --color=always {1}' --select-1 --exit-0 | awk '{print $1}')
+[ -n "$sha" ] && git show "$sha"`, platform.Quote(repo.Root))
+
 	term := psl.GetConfig().Settings.DefaultTerminal
-	script := fmt.Sprintf(`cd '%s' && git log --pretty=oneline | fzf --prompt='git show>' --ansi --preview 'git show --color=always {1}' --select-1 --exit-0 | awk '{print $1}' | xargs -o git show`, repo.Root)
-	escaped := strings.ReplaceAll(script, "'", "'\\''")
-	cmd := fmt.Sprintf("%s -e bash -c '%s'", term, escaped)
+	cmd, err := platform.Get().TerminalCommand(term, script)
+	if err != nil {
+		return fmt.Errorf("launch git show: %w", err)
+	}
 	if err := utils.StartScript("bash", cmd); err != nil {
 		return fmt.Errorf("launch git show: %w", err)
 	}

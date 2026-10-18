@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"assistant/internal/news"
+	"assistant/internal/platform"
 	"assistant/pkg/llm"
 	"assistant/pkg/xlog"
 
@@ -50,6 +51,7 @@ func loadConfig() (*Config, error) {
 	}
 	c.resolveEnv()
 	c.applyDefaults()
+	platform.SetOverrides(c.Settings.Commands)
 	if err := c.expandPaths(); err != nil {
 		return nil, fmt.Errorf("expand paths: %w", err)
 	}
@@ -82,13 +84,21 @@ type SettingsConfig struct {
 	DirSnip                string `mapstructure:"dir_snip"`
 	DirWallpaper           string `mapstructure:"dir_wallpaper"`
 	DirWorkingLogbook      string `mapstructure:"dir_working_logbook"`
+	DirAIOutput            string `mapstructure:"dir_ai_output"`
 	PathKeyboardBrightness string `mapstructure:"filepath_keyboard_brightness"`
 	PathSSHSecret          string `mapstructure:"filepath_ssh_secret"`
 	DefaultTerminal        string `mapstructure:"default_terminal"`
 	VPN                    string `mapstructure:"vpn"`
-	FeishuAppID            string `mapstructure:"feishu_app_id"`
-	FeishuAppSecret        string `mapstructure:"feishu_app_secret"`
-	FeishuChatID           string `mapstructure:"feishu_chat_id"`
+	CaptureScreenDevice    string `mapstructure:"capture_screen_device"`
+	CaptureAudioDevice     string `mapstructure:"capture_audio_device"`
+	CaptureVideoDevice     string `mapstructure:"capture_video_device"`
+	// Commands overrides built-in platform commands per intent, e.g.
+	//   commands:
+	//     keyboard_light_toggle: "kbdlight toggle"
+	Commands        map[string]string `mapstructure:"commands"`
+	FeishuAppID     string            `mapstructure:"feishu_app_id"`
+	FeishuAppSecret string            `mapstructure:"feishu_app_secret"`
+	FeishuChatID    string            `mapstructure:"feishu_chat_id"`
 }
 
 type BackgroundConfig struct {
@@ -110,13 +120,13 @@ func (c *Config) applyDefaults() {
 		c.App.Port = 4321
 	}
 	if c.App.Interface == "" {
-		c.App.Interface = detectDefaultInterface()
+		c.App.Interface = platform.Get().DefaultInterfaceName()
 	}
 	if c.LLM.Timeout == 0 {
 		c.LLM.Timeout = 300
 	}
 	if c.Settings.DefaultMonitor == "" {
-		c.Settings.DefaultMonitor = "eDP-1"
+		c.Settings.DefaultMonitor = defaultMonitor()
 	}
 	if c.Settings.DirWallpaper == "" {
 		c.Settings.DirWallpaper = "~/Pictures/wallpapers"
@@ -124,23 +134,57 @@ func (c *Config) applyDefaults() {
 	if c.Settings.DirWorkingLogbook == "" {
 		c.Settings.DirWorkingLogbook = "~/git/working/logbook"
 	}
+	if c.Settings.DirAIOutput == "" {
+		c.Settings.DirAIOutput = "~/git/test"
+	}
 	if c.Settings.PathKeyboardBrightness == "" {
-		c.Settings.PathKeyboardBrightness = "/sys/class/leds/tpacpi::kbd_backlight/brightness"
+		c.Settings.PathKeyboardBrightness = defaultKeyboardBrightnessPath()
 	}
 	if c.Settings.DefaultTerminal == "" {
-		c.Settings.DefaultTerminal = "st"
+		c.Settings.DefaultTerminal = defaultTerminal()
 	}
 	if c.Settings.DirSnip == "" {
 		c.Settings.DirSnip = "~/git/obsidian/.snippets"
 	}
 	if len(c.Background.Procs) == 0 {
-		home, _ := os.UserHomeDir()
-		c.Background.Procs = []BackgroundProc{
-			{Name: "dwmblocks", Command: "dwmblocks"},
-			{Name: "picom", Command: "picom --config " + home + "/.config/picom/picom.conf"},
-			{Name: "dunst", Command: "dunst"},
-		}
+		c.Background.Procs = defaultBackgroundProcs()
 	}
+}
+
+// defaultBackgroundProcs returns the daemons worth supervising on the current
+// OS. On macOS the dwm/X11 daemons do not exist, so nothing is started unless
+// the user configures it explicitly.
+func defaultBackgroundProcs() []BackgroundProc {
+	if platform.Get().GOOS() != platform.Linux {
+		return nil
+	}
+	home, _ := os.UserHomeDir()
+	return []BackgroundProc{
+		{Name: "dwmblocks", Command: "dwmblocks"},
+		{Name: "picom", Command: "picom --config " + home + "/.config/picom/picom.conf"},
+		{Name: "dunst", Command: "dunst"},
+	}
+}
+
+func defaultMonitor() string {
+	if platform.Get().GOOS() == platform.Darwin {
+		return "Built-in"
+	}
+	return "eDP-1"
+}
+
+func defaultTerminal() string {
+	if platform.Get().GOOS() == platform.Darwin {
+		return "Terminal"
+	}
+	return "st"
+}
+
+func defaultKeyboardBrightnessPath() string {
+	if platform.Get().GOOS() == platform.Darwin {
+		return ""
+	}
+	return "/sys/class/leds/tpacpi::kbd_backlight/brightness"
 }
 
 func (c *Config) expandPaths() error {
@@ -149,6 +193,7 @@ func (c *Config) expandPaths() error {
 		&c.Log.Filename,
 		&c.Settings.DirWallpaper,
 		&c.Settings.DirWorkingLogbook,
+		&c.Settings.DirAIOutput,
 		&c.Settings.PathSSHSecret,
 		&c.Settings.PathKeyboardBrightness,
 		&c.Settings.DirSnip,
@@ -201,32 +246,4 @@ func expandEnvPH(s string, envPH *regexp.Regexp) string {
 		}
 		return os.Getenv(groups[1])
 	})
-}
-
-func detectDefaultInterface() string {
-	data, err := os.ReadFile("/proc/net/route")
-	if err != nil {
-		return ""
-	}
-	lines := strings.Split(string(data), "\n")
-	bestIface := ""
-	bestMetric := uint32(^uint32(0))
-	for _, line := range lines[1:] {
-		fields := strings.Fields(line)
-		if len(fields) < 4 {
-			continue
-		}
-		if destHex := fields[1]; destHex != "00000000" || len(destHex) != 8 {
-			continue
-		}
-		var metric uint32
-		if len(fields) >= 7 {
-			fmt.Sscanf(fields[6], "%d", &metric)
-		}
-		if metric < bestMetric {
-			bestMetric = metric
-			bestIface = fields[0]
-		}
-	}
-	return bestIface
 }

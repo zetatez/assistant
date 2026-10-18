@@ -1,35 +1,20 @@
 package svc
 
 import (
-	"assistant/pkg/utils"
-	"fmt"
 	"strings"
 
 	"assistant/internal/bootstrap/psl"
+	"assistant/internal/platform"
 )
 
 func (s *Service) OpenURL(browser, url string) error {
 	proxy := psl.GetConfig().Settings.VPN
-	switch browser {
-	case "chrome":
-		return utils.StartScript("bash", fmt.Sprintf("chrome --proxy-server=%s '%s'", proxy, url))
-	case "qutebrowser":
-		return utils.StartScript("bash", fmt.Sprintf("qutebrowser --set content.proxy '%s' '%s'", proxy, url))
-	default:
-		return utils.StartScript("bash", fmt.Sprintf("xdg-open '%s'", url))
-	}
+	return platform.Get().OpenBrowser(browser, url, proxy, false)
 }
 
 func (s *Service) OpenURLAsApp(browser, url string) error {
 	proxy := psl.GetConfig().Settings.VPN
-	switch browser {
-	case "chrome":
-		return utils.StartScript("bash", fmt.Sprintf("chrome --proxy-server='%s' --app='%s'", proxy, url))
-	case "qutebrowser":
-		return utils.StartScript("bash", fmt.Sprintf("qutebrowser --set content.proxy '%s' --target window '%s'", proxy, url))
-	default:
-		return utils.StartScript("bash", fmt.Sprintf("chrome --proxy-server='%s' --app='%s'", proxy, url))
-	}
+	return platform.Get().OpenBrowser(browser, url, proxy, true)
 }
 
 func (s *Service) SearchBooksOnline(query string) error {

@@ -103,7 +103,7 @@ func (h *Handler) Register(r *gin.RouterGroup) {
 
 // Power godoc
 // @Summary 电源操作菜单
-// @Description 触发 rofi 电源菜单(suspend/poweroff/reboot/off-display/slock)
+// @Description 触发系统电源菜单(suspend/poweroff/reboot/off-display/lock)
 // @Tags 系统
 // @Success 200 {object} response.Response
 // @Router /api/svr/sys-shortcut [post]
@@ -467,7 +467,7 @@ func (h *Handler) SearchVideosOnline(c *gin.Context) {
 
 // BluetoothConnect godoc
 // @Summary 蓝牙连接
-// @Description 触发 rofi 选择已配对设备并连接
+// @Description 选择已配对蓝牙设备并连接
 // @Tags 蓝牙
 // @Success 200 {object} response.Response
 // @Router /api/svr/sys-bluetooth-connect [post]
@@ -477,7 +477,7 @@ func (h *Handler) SysBluetoothConnect(c *gin.Context) {
 
 // BluetoothScanConnect godoc
 // @Summary 蓝牙扫描并连接
-// @Description 扫描附近设备后 rofi 选择并连接
+// @Description 扫描附近设备后选择并连接
 // @Tags 蓝牙
 // @Success 200 {object} response.Response
 // @Router /api/svr/sys-bluetooth-scan-connect [post]
@@ -487,7 +487,7 @@ func (h *Handler) SysBluetoothScanConnect(c *gin.Context) {
 
 // BluetoothDisconnect godoc
 // @Summary 蓝牙断开
-// @Description 触发 rofi 选择已连接设备并断开
+// @Description 选择已连接蓝牙设备并断开
 // @Tags 蓝牙
 // @Success 200 {object} response.Response
 // @Router /api/svr/sys-bluetooth-disconnect [post]
@@ -497,7 +497,7 @@ func (h *Handler) SysBluetoothDisconnect(c *gin.Context) {
 
 // WifiConnect godoc
 // @Summary WiFi 连接
-// @Description 触发 rofi 选择 WiFi 并输入密码后连接
+// @Description 选择 WiFi 并输入密码后连接
 // @Tags 网络
 // @Success 200 {object} response.Response
 // @Router /api/svr/sys-wifi-connect [post]
@@ -505,7 +505,7 @@ func (h *Handler) SysWifiConnect(c *gin.Context) { h.trigger(c, "wifi", h.svc.Sy
 
 // Display godoc
 // @Summary 显示器布局
-// @Description 触发 rofi 选择显示器布局
+// @Description 选择显示器布局
 // @Tags 系统
 // @Success 200 {object} response.Response
 // @Router /api/svr/sys-display [post]
@@ -580,7 +580,7 @@ func (h *Handler) OpenURLAsApp(c *gin.Context) {
 
 // SSHConnect godoc
 // @Summary SSH 连接
-// @Description 触发 rofi 选择 SSH 主机并输入密码后连接
+// @Description 选择 SSH 主机并输入密码后连接
 // @Tags 网络
 // @Success 200 {object} response.Response
 // @Router /api/svr/sys-ssh-connect [post]
@@ -771,7 +771,7 @@ func (h *Handler) FileSearchExec(c *gin.Context) {
 
 // OpenImages godoc
 // @Summary 打开图片
-// @Description 用 sxiv 打开目录下所有图片; dir 留空时默认 $HOME
+// @Description 用系统图片查看器打开目录下所有图片; dir 留空时默认 $HOME
 // @Tags 文件
 // @Accept json
 // @Param body body DirRequest true "dir: 目录路径(空表示 $HOME)"
@@ -805,7 +805,7 @@ func (h *Handler) SnipFzf(c *gin.Context) {
 
 // SnipCreate godoc
 // @Summary 创建 snip
-// @Description rofi 输入名称, nvim 编辑内容
+// @Description 输入名称, nvim 编辑内容
 // @Tags 工具
 // @Param name query string false "snip 名称"
 // @Success 200 {object} response.Response
@@ -822,7 +822,7 @@ func (h *Handler) SnipCreate(c *gin.Context) {
 
 // Search godoc
 // @Summary 搜索并执行动作
-// @Description rofi 列出所有可用命令并执行
+// @Description 列出所有可用命令并执行
 // @Tags 工具
 // @Success 200 {object} response.Response
 // @Router /api/svr/search [post]
@@ -867,7 +867,7 @@ func (h *Handler) GitLogShow(c *gin.Context) {
 
 // Screenshot godoc
 // @Summary 截图
-// @Description 使用 flameshot 截取整个屏幕，保存到 ~/Pictures/screenshots/ 目录
+// @Description 截取整个屏幕，保存到 ~/Pictures/screenshots/ 目录
 // @Tags 工具
 // @Success 200 {object} response.Response
 // @Router /api/svr/screenshot [post]

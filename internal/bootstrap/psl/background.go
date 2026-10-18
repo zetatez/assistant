@@ -2,10 +2,11 @@ package psl
 
 import (
 	"context"
-	"fmt"
 	"os/exec"
 	"path/filepath"
 	"time"
+
+	"assistant/internal/platform"
 )
 
 func StartBackgroundTasks(ctx context.Context) {
@@ -44,24 +45,31 @@ func startDaemon(ctx context.Context, procs []BackgroundProc) {
 }
 
 func isRunning(name string) bool {
+	if name == "" {
+		return false
+	}
 	return exec.Command("pgrep", "-x", name).Run() == nil
 }
 
 func startWallpaper(ctx context.Context) {
 	go func() {
 		dir := GetConfig().Settings.DirWallpaper
+		if dir == "" {
+			return
+		}
 		ticker := time.NewTicker(60 * time.Second)
 		defer ticker.Stop()
 		for {
-			files, _ := filepath.Glob(filepath.Join(dir, "*.JPG"))
-			for _, pic := range files {
+			for _, pic := range wallpaperFiles(dir) {
 				select {
 				case <-ctx.Done():
 					return
 				default:
 				}
-				cmd := exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("feh --bg-fill '%s'", pic))
-				_ = cmd.Run()
+				if err := platform.Get().SetWallpaper(pic); err != nil {
+					GetLogger().WithError(err).WithField("picture", pic).Warn("set wallpaper failed")
+					break
+				}
 				select {
 				case <-ctx.Done():
 					return
@@ -75,4 +83,18 @@ func startWallpaper(ctx context.Context) {
 			}
 		}
 	}()
+}
+
+// wallpaperFiles returns the supported image files in dir, newest behaviour
+// compatible with the previous *.JPG-only glob but covering common extensions.
+func wallpaperFiles(dir string) []string {
+	var files []string
+	for _, pattern := range []string{"*.jpg", "*.jpeg", "*.png", "*.JPG", "*.JPEG", "*.PNG"} {
+		matches, err := filepath.Glob(filepath.Join(dir, pattern))
+		if err != nil {
+			continue
+		}
+		files = append(files, matches...)
+	}
+	return files
 }

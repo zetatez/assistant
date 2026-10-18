@@ -4,13 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"assistant/internal/bootstrap/psl"
+	"assistant/internal/platform"
 	"assistant/pkg/dwmblocknotify"
 	"assistant/pkg/llm"
 )
@@ -114,11 +113,7 @@ func (s *Service) SolveLeetCode() error {
 		return fmt.Errorf("write clipboard: %w", err)
 	}
 
-	leetCodeOutputFile := "/home/shiyi/git/test/go/x.go"
-	if err := os.MkdirAll(filepath.Dir(leetCodeOutputFile), 0o755); err != nil {
-		return fmt.Errorf("create dir: %w", err)
-	}
-	if err := os.WriteFile(leetCodeOutputFile, []byte(result), 0o644); err != nil {
+	if err := s.writeAIOutput(filepath.Join("go", "x.go"), result); err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
 
@@ -163,11 +158,7 @@ func (s *Service) SolveLeetCodeScreenshot() error {
 		return fmt.Errorf("write clipboard: %w", err)
 	}
 
-	leetCodeOutputFile := "/home/shiyi/git/test/go/x.go"
-	if err := os.MkdirAll(filepath.Dir(leetCodeOutputFile), 0o755); err != nil {
-		return fmt.Errorf("create dir: %w", err)
-	}
-	if err := os.WriteFile(leetCodeOutputFile, []byte(result), 0o644); err != nil {
+	if err := s.writeAIOutput(filepath.Join("go", "x.go"), result); err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
 
@@ -176,15 +167,9 @@ func (s *Service) SolveLeetCodeScreenshot() error {
 }
 
 func (s *Service) screenshot() (string, error) {
-	tool := "flameshot"
-	if _, err := exec.LookPath(tool); err != nil {
-		return "", fmt.Errorf("screenshot tool not found: %s", tool)
-	}
-	cmd := exec.Command(tool, "full", "--raw")
-	cmd.Env = append(os.Environ(), "DISPLAY=:0")
-	out, err := cmd.Output()
+	out, err := platform.Get().Screenshot()
 	if err != nil {
-		return "", fmt.Errorf("screenshot failed: %w", err)
+		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(out), nil
 }

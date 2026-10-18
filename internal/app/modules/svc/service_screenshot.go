@@ -3,17 +3,17 @@ package svc
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"time"
 
+	"assistant/internal/platform"
 	"assistant/pkg/dwmblocknotify"
 )
 
 func (s *Service) Screenshot() (string, error) {
-	tool := "flameshot"
-	if _, err := exec.LookPath(tool); err != nil {
-		return "", fmt.Errorf("screenshot tool not found: %s", tool)
+	data, err := platform.Get().Screenshot()
+	if err != nil {
+		return "", err
 	}
 
 	dir, err := os.UserHomeDir()
@@ -29,13 +29,7 @@ func (s *Service) Screenshot() (string, error) {
 	filename := fmt.Sprintf("screenshot.%s.jpeg", now.Format("2006.01.02.15.04.05"))
 	path := filepath.Join(dir, filename)
 
-	cmd := exec.Command(tool, "full", "--raw")
-	cmd.Env = append(os.Environ(), "DISPLAY=:0")
-	out, err := cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("screenshot failed: %w", err)
-	}
-	if err := os.WriteFile(path, out, 0o644); err != nil {
+	if err := os.WriteFile(path, data, 0o644); err != nil {
 		return "", fmt.Errorf("write screenshot: %w", err)
 	}
 	dwmblocknotify.PUT("Screenshot saved: "+path, 2*time.Second)

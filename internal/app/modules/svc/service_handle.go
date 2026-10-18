@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"assistant/internal/bootstrap/psl"
+	"assistant/internal/platform"
 )
 
 type fileLocationPattern struct {
@@ -146,16 +147,20 @@ func (s *Service) HandleClipboard() (string, error) {
 	term := psl.GetConfig().Settings.DefaultTerminal
 
 	if file, line, col, ok := s.extractFileLocation(text); ok {
-		var vimcmd string
+		var script string
 		switch {
 		case line > 0 && col > 0:
-			vimcmd = fmt.Sprintf("call cursor(%d,%d)", line, col)
-			_, _, err = utils.RunScript("bash", fmt.Sprintf("%s -e nvim +'%s' %s", term, vimcmd, file))
+			script = fmt.Sprintf("nvim +'call cursor(%d,%d)' %s", line, col, platform.Quote(file))
 		case line > 0:
-			_, _, err = utils.RunScript("bash", fmt.Sprintf("%s -e nvim +%d %s", term, line, file))
+			script = fmt.Sprintf("nvim +%d %s", line, platform.Quote(file))
 		default:
-			_, _, err = utils.RunScript("bash", fmt.Sprintf("%s -e nvim %s", term, file))
+			script = fmt.Sprintf("nvim %s", platform.Quote(file))
 		}
+		cmd, cmdErr := platform.Get().TerminalCommand(term, script)
+		if cmdErr != nil {
+			return "", cmdErr
+		}
+		_, _, err = utils.RunScript("bash", cmd)
 		msg := fmt.Sprintf("opened %s", file)
 		return msg, err
 	}

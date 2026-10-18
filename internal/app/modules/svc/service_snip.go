@@ -1,7 +1,6 @@
 package svc
 
 import (
-	"assistant/pkg/utils"
 	"fmt"
 	"os"
 	"path"
@@ -9,7 +8,9 @@ import (
 	"time"
 
 	"assistant/internal/bootstrap/psl"
+	"assistant/internal/platform"
 	"assistant/pkg/dwmblocknotify"
+	"assistant/pkg/utils"
 )
 
 func (s *Service) SnipFzf() error {
@@ -20,17 +21,20 @@ func (s *Service) SnipFzf() error {
 
 	tmpf := path.Join(os.TempDir(), "snip-fzf-selected")
 	_ = os.Remove(tmpf)
-	term := psl.GetConfig().Settings.DefaultTerminal
-	tmpl := `
+	script := fmt.Sprintf(`
 cd %s && selected=$(
   find . -type f | sed "s|^\./||" |
   fzf --prompt="Snip> " --height=100%% --border \
       --preview="bat --style=plain --color=always {} 2>/dev/null || cat {}" \
       --preview-window=right:60%%
 ) && [ -n "$selected" ] && printf "%%s" "$selected" > %s
-`
-	script := fmt.Sprintf(tmpl, snipDir, tmpf)
-	cmd := fmt.Sprintf("%s -e sh -c '%s'", term, script)
+`, platform.Quote(snipDir), platform.Quote(tmpf))
+
+	term := psl.GetConfig().Settings.DefaultTerminal
+	cmd, err := platform.Get().TerminalCommand(term, script)
+	if err != nil {
+		return fmt.Errorf("launch fzf: %w", err)
+	}
 	if _, _, err := utils.RunScript("bash", cmd); err != nil {
 		return fmt.Errorf("launch fzf: %w", err)
 	}
@@ -63,9 +67,9 @@ func (s *Service) SnipCreate(name string) error {
 	}
 
 	if name == "" {
-		out, _, err := utils.RunScript("bash", "rofi -dmenu -p 'Snippet name' < /dev/null")
+		out, err := platform.Get().Input("Snippet name", false)
 		if err != nil || strings.TrimSpace(out) == "" {
-			return nil
+			return err
 		}
 		name = strings.TrimSpace(out)
 	}
@@ -75,7 +79,11 @@ func (s *Service) SnipCreate(name string) error {
 		return fmt.Errorf("create snippet subdir: %w", err)
 	}
 	term := psl.GetConfig().Settings.DefaultTerminal
-	if err := utils.StartScript("bash", fmt.Sprintf("%s -e nvim '%s'", term, filePath)); err != nil {
+	cmd, err := platform.Get().TerminalCommand(term, fmt.Sprintf("nvim %s", platform.Quote(filePath)))
+	if err != nil {
+		return fmt.Errorf("launch nvim: %w", err)
+	}
+	if err := utils.StartScript("bash", cmd); err != nil {
 		return fmt.Errorf("launch nvim: %w", err)
 	}
 	dwmblocknotify.PUT(fmt.Sprintf("Snip created: %s", name), 2*time.Second)

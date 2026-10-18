@@ -1,13 +1,18 @@
 # ============================================================
-# Assistant runtime config (same structure as config.default.yaml)
+# Assistant runtime config template (Arch Linux & macOS)
+#
 # ${ENV} placeholders are resolved from environment variables (empty if unset).
+# Values left empty fall back to a sensible per-OS default, so this template
+# works unmodified on both targets.
 # ============================================================
 
 # ── Server ─────────────────────────────────────────────
 app:
   name: assistant
   port: 4321
-  interface: wlan0
+  # empty = auto-detect the interface that owns the default route
+  # (Linux: wlan0/eth0..., macOS: en0/en1...)
+  interface: ""
   root_username: admin
   root_password: AAaa00__
 
@@ -25,13 +30,37 @@ log:
 # ── System Settings ────────────────────────────────────
 settings:
   vpn: socks5://127.0.0.1:7891
-  default_monitor: eDP-1
-  default_terminal: st
+  # empty defaults: Linux "eDP-1", macOS "Built-in"
+  default_monitor: ""
+  # empty defaults: Linux "st", macOS "Terminal"
+  # (macOS also accepts "iTerm"; other terminals must accept `-e <cmd>`)
+  default_terminal: ""
   dir_snip: ~/git/obsidian/.snippets
   dir_wallpaper: ~/Pictures/wallpapers
   dir_working_logbook: ~/git/working/logbook
-  filepath_keyboard_brightness: /sys/class/leds/tpacpi::kbd_backlight/brightness
+  # where AI answers are written (replaces the old hardcoded /home/... path)
+  dir_ai_output: ~/git/test
+  # Linux only (sysfs); leave empty to disable the keyboard-light endpoint
+  filepath_keyboard_brightness: ""
   filepath_ssh_secret: ~/.ssh/my.ssh.json
+
+  # ffmpeg capture devices; empty = per-OS default
+  #   Linux: screen=$DISPLAY audio=default video=/dev/video0
+  #   macOS: screen=1:none    audio=0       video=0:0
+  capture_screen_device: ""
+  capture_audio_device: ""
+  capture_video_device: ""
+
+  # Override any built-in platform command by intent. Keys:
+  #   volume_up/down/toggle/set, audio_reset, mic_up/down/toggle/set,
+  #   brightness_up/down/set, keyboard_light_toggle,
+  #   screen_off, suspend, reboot, shutdown, lock, key_repeat_set
+  # Templates may use {0}, {1} for positional args. Examples:
+  #   commands:
+  #     brightness_up: "brightness 0.05"        # brew install brightness
+  #     keyboard_light_toggle: "kbdlight toggle"
+  commands: {}
+
   feishu_app_id: ${FEISHU_APP_ID}
   feishu_app_secret: ${FEISHU_APP_SECRET}
   feishu_chat_id: ${FEISHU_CHAT_ID}
@@ -48,30 +77,10 @@ llm:
     - deepseek-v4-flash-vision-exp
 
 # ── Background Daemons ─────────────────────────────────
+# empty procs = per-OS defaults: Linux (dwmblocks/picom/dunst), macOS (none).
 background:
   enabled: true
-  procs:
-    - name: dwmblocks
-      command: dwmblocks
-      precursor: dwm
-    - name: fcitx5
-      command: fcitx5 -d
-      precursor: dwm
-    - name: picom
-      command: picom --config ~/.config/picom/picom.conf
-      precursor: dwm
-    - name: hhkb
-      command: hhkb
-      precursor: dwm
-    - name: xset
-      command: xset r rate 158 128
-      precursor: dwm
-    - name: clipmenud
-      command: clipmenud
-      precursor: dwm
-    - name: dunst
-      command: dunst
-      precursor: dwm
+  procs: []
 
 # ── News Feed ──────────────────────────────────────────
 news:

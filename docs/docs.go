@@ -452,7 +452,7 @@ const docTemplate = `{
         },
         "/api/svr/open-images": {
             "post": {
-                "description": "用 sxiv 打开目录下所有图片; dir 留空时默认 $HOME",
+                "description": "用系统图片查看器打开目录下所有图片; dir 留空时默认 $HOME",
                 "consumes": [
                     "application/json"
                 ],
@@ -545,7 +545,7 @@ const docTemplate = `{
         },
         "/api/svr/screenshot": {
             "post": {
-                "description": "使用 flameshot 截取整个屏幕，保存到 ~/Pictures/screenshots/ 目录",
+                "description": "截取整个屏幕，保存到 ~/Pictures/screenshots/ 目录",
                 "tags": [
                     "工具"
                 ],
@@ -562,7 +562,7 @@ const docTemplate = `{
         },
         "/api/svr/search": {
             "post": {
-                "description": "rofi 列出所有可用命令并执行",
+                "description": "列出所有可用命令并执行",
                 "tags": [
                     "工具"
                 ],
@@ -689,7 +689,7 @@ const docTemplate = `{
         },
         "/api/svr/snip-create": {
             "post": {
-                "description": "rofi 输入名称, nvim 编辑内容",
+                "description": "输入名称, nvim 编辑内容",
                 "tags": [
                     "工具"
                 ],
@@ -799,7 +799,7 @@ const docTemplate = `{
         },
         "/api/svr/sys-bluetooth-connect": {
             "post": {
-                "description": "触发 rofi 选择已配对设备并连接",
+                "description": "选择已配对蓝牙设备并连接",
                 "tags": [
                     "蓝牙"
                 ],
@@ -816,7 +816,7 @@ const docTemplate = `{
         },
         "/api/svr/sys-bluetooth-disconnect": {
             "post": {
-                "description": "触发 rofi 选择已连接设备并断开",
+                "description": "选择已连接蓝牙设备并断开",
                 "tags": [
                     "蓝牙"
                 ],
@@ -833,7 +833,7 @@ const docTemplate = `{
         },
         "/api/svr/sys-bluetooth-scan-connect": {
             "post": {
-                "description": "扫描附近设备后 rofi 选择并连接",
+                "description": "扫描附近设备后选择并连接",
                 "tags": [
                     "蓝牙"
                 ],
@@ -850,7 +850,7 @@ const docTemplate = `{
         },
         "/api/svr/sys-display": {
             "post": {
-                "description": "触发 rofi 选择显示器布局",
+                "description": "选择显示器布局",
                 "tags": [
                     "系统"
                 ],
@@ -998,7 +998,7 @@ const docTemplate = `{
         },
         "/api/svr/sys-shortcut": {
             "post": {
-                "description": "触发 rofi 电源菜单(suspend/poweroff/reboot/off-display/slock)",
+                "description": "触发系统电源菜单(suspend/poweroff/reboot/off-display/lock)",
                 "tags": [
                     "系统"
                 ],
@@ -1015,7 +1015,7 @@ const docTemplate = `{
         },
         "/api/svr/sys-ssh-connect": {
             "post": {
-                "description": "触发 rofi 选择 SSH 主机并输入密码后连接",
+                "description": "选择 SSH 主机并输入密码后连接",
                 "tags": [
                     "网络"
                 ],
@@ -1080,7 +1080,7 @@ const docTemplate = `{
         },
         "/api/svr/sys-wifi-connect": {
             "post": {
-                "description": "触发 rofi 选择 WiFi 并输入密码后连接",
+                "description": "选择 WiFi 并输入密码后连接",
                 "tags": [
                     "网络"
                 ],

@@ -3,8 +3,6 @@ package svc
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -57,11 +55,7 @@ func (s *Service) SolveQuestion() error {
 		return fmt.Errorf("write clipboard: %w", err)
 	}
 
-	questionOutputFile := "/home/shiyi/git/test/x.md"
-	if err := os.MkdirAll(filepath.Dir(questionOutputFile), 0o755); err != nil {
-		return fmt.Errorf("create dir: %w", err)
-	}
-	if err := os.WriteFile(questionOutputFile, []byte(result), 0o644); err != nil {
+	if err := s.writeAIOutput("x.md", result); err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
 
@@ -105,11 +99,7 @@ func (s *Service) SolveQuestionScreenshot() error {
 		return fmt.Errorf("write clipboard: %w", err)
 	}
 
-	questionOutputFile := "/home/shiyi/git/test/x.md"
-	if err := os.MkdirAll(filepath.Dir(questionOutputFile), 0o755); err != nil {
-		return fmt.Errorf("create dir: %w", err)
-	}
-	if err := os.WriteFile(questionOutputFile, []byte(result), 0o644); err != nil {
+	if err := s.writeAIOutput("x.md", result); err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
 

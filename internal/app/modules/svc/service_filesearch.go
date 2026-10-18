@@ -1,17 +1,17 @@
 package svc
 
 import (
-	"assistant/pkg/utils"
 	"fmt"
 	"os"
 	"strings"
 
 	"assistant/internal/bootstrap/psl"
+	"assistant/internal/platform"
+	"assistant/pkg/utils"
 )
 
 const (
-	tmplFileSearch = `%s -e bash -c '
-fd --type f \
+	tmplFileSearch = `fd --type f \
   --hidden \
   --exclude .git \
   --exclude .cache \
@@ -21,12 +21,11 @@ fd --type f \
   --prompt="search file>" \
   --preview "lazy -o view -f {}" \
   --select-1 \
-	--exit-0 \
-	--print0 \
-| xargs -0 -o lazy -o open -f'`
+  --exit-0 \
+  --print0 \
+| xargs -0 -o lazy -o open -f`
 
-	tmplFileSearchContent = `%s -e bash -c '
-cd "%s" && \
+	tmplFileSearchContent = `cd "%s" && \
 RG_PREFIX="rg --column --line-number --no-heading --color=always --smart-case"
 matched=$( \
 	FZF_DEFAULT_COMMAND="$RG_PREFIX " \
@@ -45,10 +44,9 @@ filepath=$(echo "$matched" | awk -F: "{print \$1}")
 rowno=$(echo "$matched" | awk -F: "{print \$2}")
 if [ -n "$filepath" ]; then
   nvim +"$rowno" "$filepath"
-fi'`
+fi`
 
-	tmplFileSearchBook = `%s -e bash -c '
-fd --type f \
+	tmplFileSearchBook = `fd --type f \
   --extension pdf \
   --extension epub \
   --extension djvu \
@@ -62,12 +60,11 @@ fd --type f \
   --prompt="search book>" \
   --preview "lazy -o view -f {}" \
   --select-1 \
-	--exit-0 \
-	--print0 \
-| xargs -0 -o lazy -o open -f'`
+  --exit-0 \
+  --print0 \
+| xargs -0 -o lazy -o open -f`
 
-	tmplFileSearchMedia = `%s -e bash -c '
-fd --type f \
+	tmplFileSearchMedia = `fd --type f \
   --extension jpg \
   --extension jpeg \
   --extension png \
@@ -88,12 +85,11 @@ fd --type f \
   --prompt="search media>" \
   --preview "lazy -o view -f {}" \
   --select-1 \
-	--exit-0 \
-	--print0 \
-| xargs -0 -o lazy -o open -f'`
+  --exit-0 \
+  --print0 \
+| xargs -0 -o lazy -o open -f`
 
-	tmplFileSearchWiki = `%s -e bash -c '
-fd --type f \
+	tmplFileSearchWiki = `fd --type f \
   --extension md \
   --hidden \
   --exclude .git \
@@ -104,12 +100,11 @@ fd --type f \
   --prompt="search wiki>" \
   --preview "lazy -o view -f {}" \
   --select-1 \
-	--exit-0 \
-	--print0 \
-| xargs -0 -o lazy -o open -f'`
+  --exit-0 \
+  --print0 \
+| xargs -0 -o lazy -o open -f`
 
-	tmplFileSearchExec = `%s -e bash -c '
-fd --type x \
+	tmplFileSearchExec = `fd --type x \
   --extension sh \
   --extension py \
   --extension jl \
@@ -122,25 +117,24 @@ fd --type x \
   --prompt="lazy exec search file>" \
   --preview "lazy -o view -f {}" \
   --select-1 \
-	--exit-0 \
-	--print0 \
-| xargs -0 -o lazy -o exec -f'`
-
-	tmplFileSearchImages = `fd --type f \
-  --extension jpg \
-  --extension jpeg \
-  --extension png \
-  --extension gif \
-  --extension bmp \
-  --extension tiff \
-  --exclude repos \
-  . "%s" \
-| sxiv -ftio`
+  --exit-0 \
+  --print0 \
+| xargs -0 -o lazy -o exec -f`
 )
 
 func homeDir() string {
 	home, _ := os.UserHomeDir()
 	return home
+}
+
+// runInTerminal starts script inside the configured terminal.
+func runInTerminal(script string) error {
+	term := psl.GetConfig().Settings.DefaultTerminal
+	cmd, err := platform.Get().TerminalCommand(term, script)
+	if err != nil {
+		return err
+	}
+	return utils.StartScript("bash", cmd)
 }
 
 func (s *Service) SearchWeb(query string) error {
@@ -152,53 +146,47 @@ func (s *Service) FileSearch(dir string) error {
 	if dir == "" {
 		dir = homeDir()
 	}
-	term := psl.GetConfig().Settings.DefaultTerminal
-	return utils.StartScript("bash", fmt.Sprintf(tmplFileSearch, term, dir))
+	return runInTerminal(fmt.Sprintf(tmplFileSearch, dir))
 }
 
 func (s *Service) FileSearchContent(dir string) error {
 	if dir == "" {
 		dir = homeDir()
 	}
-	term := psl.GetConfig().Settings.DefaultTerminal
-	return utils.StartScript("bash", fmt.Sprintf(tmplFileSearchContent, term, dir))
+	return runInTerminal(fmt.Sprintf(tmplFileSearchContent, dir))
 }
 
 func (s *Service) FileSearchBook(dir string) error {
 	if dir == "" {
 		dir = homeDir()
 	}
-	term := psl.GetConfig().Settings.DefaultTerminal
-	return utils.StartScript("bash", fmt.Sprintf(tmplFileSearchBook, term, dir))
+	return runInTerminal(fmt.Sprintf(tmplFileSearchBook, dir))
 }
 
 func (s *Service) FileSearchMedia(dir string) error {
 	if dir == "" {
 		dir = homeDir()
 	}
-	term := psl.GetConfig().Settings.DefaultTerminal
-	return utils.StartScript("bash", fmt.Sprintf(tmplFileSearchMedia, term, dir))
+	return runInTerminal(fmt.Sprintf(tmplFileSearchMedia, dir))
 }
 
 func (s *Service) FileSearchWiki(dir string) error {
 	if dir == "" {
 		dir = homeDir()
 	}
-	term := psl.GetConfig().Settings.DefaultTerminal
-	return utils.StartScript("bash", fmt.Sprintf(tmplFileSearchWiki, term, dir))
+	return runInTerminal(fmt.Sprintf(tmplFileSearchWiki, dir))
 }
 
 func (s *Service) FileSearchExec(dir string) error {
 	if dir == "" {
 		dir = homeDir()
 	}
-	term := psl.GetConfig().Settings.DefaultTerminal
-	return utils.StartScript("bash", fmt.Sprintf(tmplFileSearchExec, term, dir))
+	return runInTerminal(fmt.Sprintf(tmplFileSearchExec, dir))
 }
 
 func (s *Service) OpenImages(dir string) error {
 	if dir == "" {
 		dir = homeDir()
 	}
-	return utils.StartScript("bash", fmt.Sprintf(tmplFileSearchImages, dir))
+	return platform.Get().OpenImages(dir)
 }

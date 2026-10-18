@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"assistant/internal/bootstrap/psl"
+	"assistant/internal/platform"
 )
 
 func (s *Service) Note(noteType string) error {
@@ -57,7 +58,12 @@ func (s *Service) Note(noteType string) error {
 	}
 
 	term := psl.GetConfig().Settings.DefaultTerminal
-	if _, _, err := utils.RunScript("bash", fmt.Sprintf(`%s -e nvim "+normal G$" "%s"`, term, filePath)); err != nil {
+	script := fmt.Sprintf(`nvim "+normal G$" %s`, platform.Quote(filePath))
+	cmd, err := platform.Get().TerminalCommand(term, script)
+	if err != nil {
+		return fmt.Errorf("launch nvim: %w", err)
+	}
+	if _, _, err := utils.RunScript("bash", cmd); err != nil {
 		return fmt.Errorf("launch nvim: %w", err)
 	}
 	return nil

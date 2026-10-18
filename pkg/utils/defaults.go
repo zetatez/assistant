@@ -34,7 +34,7 @@ func GetOSDefaultTerminal() (string, error) {
 	case OSLinux:
 		return "st", nil
 	case OSDarwin:
-		return "kitty", nil
+		return "Terminal", nil
 	default:
 		return "", fmt.Errorf("unsupported OS: %s", runtime.GOOS)
 	}

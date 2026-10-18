@@ -1,136 +1,69 @@
 package svc
 
 import (
-	"assistant/pkg/utils"
-	"bufio"
 	"fmt"
-	"os"
-	"os/exec"
-	"regexp"
 	"strings"
 	"time"
 
 	"assistant/internal/bootstrap/psl"
+	"assistant/internal/platform"
 	"assistant/pkg/dwmblocknotify"
+	"assistant/pkg/utils"
 )
 
 func (s *Service) SysShortcut() error {
-	shortcuts := map[string]string{
-		"suspend":     "systemctl suspend",
-		"poweroff":    "systemctl poweroff",
-		"reboot":      "systemctl reboot",
-		"off-display": "sleep .5; xset dpms force off",
-		"slock":       "slock",
+	actions := []string{"suspend", "poweroff", "reboot", "off-display", "lock"}
+	intents := map[string]platform.Intent{
+		"suspend":     platform.Suspend,
+		"poweroff":    platform.Shutdown,
+		"reboot":      platform.Reboot,
+		"off-display": platform.ScreenOff,
+		"lock":        platform.Lock,
 	}
-	list := make([]string, 0, len(shortcuts))
-	for k := range shortcuts {
-		list = append(list, k)
+
+	action, err := platform.Get().Select("power", actions)
+	if err != nil {
+		return err
 	}
-	out, _, err := utils.RunScript("bash", fmt.Sprintf("printf '%%s\n' %s | rofi -dmenu -p 'power'", strings.Join(list, " ")))
-	if err != nil || strings.TrimSpace(out) == "" {
+	if action == "" {
 		return nil
 	}
-	action := strings.TrimSpace(out)
-	cmd, ok := shortcuts[action]
+	intent, ok := intents[action]
 	if !ok {
 		return fmt.Errorf("unknown action: %s", action)
 	}
-	_, _, err = utils.RunScript("bash", cmd)
-	return err
+	return platform.Get().Run(intent)
 }
 
 func (s *Service) SysDisplay() error {
 	cfg := psl.GetConfig().Settings
-	primaryMonitor := cfg.DefaultMonitor
-	stdout, _, err := utils.RunScript("bash", fmt.Sprintf("xrandr|grep ' connected'|grep -v '%s'|awk '{print $1}'", primaryMonitor))
-	if err != nil {
-		return fmt.Errorf("detect monitors: %w", err)
-	}
-	secondMonitor := strings.TrimSpace(stdout)
-	if secondMonitor == "" {
-		return fmt.Errorf("only one monitor detected")
-	}
+	p := platform.Get()
 
-	displayCmds := map[string]string{
-		"default":               fmt.Sprintf("xrandr --output %s --auto --output %s --off", primaryMonitor, secondMonitor),
-		"clone":                 fmt.Sprintf("xrandr --output %s --mode 1920x1080", secondMonitor),
-		"primary_only":          fmt.Sprintf("xrandr --output %s --auto --output %s --off", primaryMonitor, secondMonitor),
-		"second_only":           fmt.Sprintf("xrandr --output %s --auto --output %s --off", secondMonitor, primaryMonitor),
-		"left_of":               fmt.Sprintf("xrandr --output %s --auto --left-of %s --auto", secondMonitor, primaryMonitor),
-		"right_of":              fmt.Sprintf("xrandr --output %s --auto --right-of %s --auto", secondMonitor, primaryMonitor),
-		"above":                 fmt.Sprintf("xrandr --output %s --auto --above %s --auto", secondMonitor, primaryMonitor),
-		"below":                 fmt.Sprintf("xrandr --output %s --auto --below %s --auto", secondMonitor, primaryMonitor),
-		"rotate_left_left_of":   fmt.Sprintf("xrandr --output %s --auto --rotate left --left-of %s --auto", secondMonitor, primaryMonitor),
-		"rotate_right_left_of":  fmt.Sprintf("xrandr --output %s --auto --rotate right --left-of %s --auto", secondMonitor, primaryMonitor),
-		"rotate_left_right_of":  fmt.Sprintf("xrandr --output %s --auto --rotate left --right-of %s --auto", secondMonitor, primaryMonitor),
-		"rotate_right_right_of": fmt.Sprintf("xrandr --output %s --auto --rotate right --right-of %s --auto", secondMonitor, primaryMonitor),
-	}
-
-	list := make([]string, 0, len(displayCmds))
-	for k := range displayCmds {
-		list = append(list, k)
-	}
-	out, _, err := utils.RunScript("bash", fmt.Sprintf(`printf '%%s\n' %s | rofi -dmenu -p 'screen strategy'`, strings.Join(list, " ")))
+	layouts, err := p.DisplayLayouts(cfg.DefaultMonitor)
 	if err != nil {
-		dwmblocknotify.PUT(fmt.Sprintf("display: rofi failed: %v", err), 3*time.Second)
-		s.runDisplayFallback(displayCmds["default"], cfg.DirWallpaper)
-		return nil
+		return err
 	}
-	layout := strings.TrimSpace(out)
+	layout, err := p.Select("screen strategy", layouts)
+	if err != nil {
+		dwmblocknotify.PUT(fmt.Sprintf("display: prompt failed: %v", err), 3*time.Second)
+		layout = "default"
+	}
 	if layout == "" {
-		return nil
+		layout = "default"
 	}
-
-	cmd, ok := displayCmds[layout]
-	if !ok {
-		dwmblocknotify.PUT(fmt.Sprintf("display: unknown layout %q, falling back", layout), 3*time.Second)
-		s.runDisplayFallback(displayCmds["default"], cfg.DirWallpaper)
-		return nil
-	}
-
-	if _, stderr, err := utils.RunScript("bash", cmd); err != nil {
-		return fmt.Errorf("set display: %s", stderr)
-	}
-
-	if _, _, err := utils.RunScript("bash", fmt.Sprintf("feh --bg-fill %s", cfg.DirWallpaper)); err != nil {
-		dwmblocknotify.PUT(fmt.Sprintf("display: feh wallpaper failed: %v", err), 3*time.Second)
+	if err := p.ApplyDisplayLayout(layout, cfg.DefaultMonitor, cfg.DirWallpaper); err != nil {
+		return fmt.Errorf("set display: %w", err)
 	}
 	return nil
 }
 
-// runDisplayFallback executes a default xrandr/feh pair and surfaces any
-// failure via notify. Used when the user cancels rofi or picks an unknown
-// layout — we still want a working display, but the operator should know if
-// the fallback also failed.
-func (s *Service) runDisplayFallback(xrandrCmd, wallpaperDir string) {
-	if _, _, err := utils.RunScript("bash", xrandrCmd); err != nil {
-		dwmblocknotify.PUT(fmt.Sprintf("display fallback: xrandr failed: %v", err), 3*time.Second)
-	}
-	if _, _, err := utils.RunScript("bash", fmt.Sprintf("feh --bg-fill %s", wallpaperDir)); err != nil {
-		dwmblocknotify.PUT(fmt.Sprintf("display fallback: feh failed: %v", err), 3*time.Second)
-	}
-}
-
 func (s *Service) SysKeyboardLight() (string, error) {
-	kbdPath := psl.GetConfig().Settings.PathKeyboardBrightness
-	data, err := os.ReadFile(kbdPath)
-	if err != nil {
-		return "", fmt.Errorf("read keyboard brightness: %w", err)
-	}
-	current := strings.TrimSpace(string(data))
-	newVal := "1"
-	if current == "1" {
-		newVal = "0"
-	}
-	_, _, err = utils.RunScript("bash", fmt.Sprintf("sudo sh -c 'echo %s > %s'", newVal, kbdPath))
-	if err != nil {
-		return "", fmt.Errorf("set keyboard brightness: %w", err)
-	}
-	return newVal, nil
+	path := psl.GetConfig().Settings.PathKeyboardBrightness
+	return platform.Get().KeyboardLightToggle(path)
 }
 
 func (s *Service) SysVolumeUp() error {
-	_, _, err := utils.RunScript("bash", "amixer set Master unmute && amixer set Master 5%+")
+	err := platform.Get().Run(platform.VolumeUp)
 	if err == nil {
 		dwmblocknotify.PUT("vol +5%", 1*time.Second)
 	}
@@ -138,7 +71,7 @@ func (s *Service) SysVolumeUp() error {
 }
 
 func (s *Service) SysVolumeDown() error {
-	_, _, err := utils.RunScript("bash", "amixer set Master unmute && amixer set Master 5%-")
+	err := platform.Get().Run(platform.VolumeDown)
 	if err == nil {
 		dwmblocknotify.PUT("vol -5%", 1*time.Second)
 	}
@@ -146,7 +79,7 @@ func (s *Service) SysVolumeDown() error {
 }
 
 func (s *Service) SysVolumeToggle() error {
-	_, _, err := utils.RunScript("bash", "amixer set Master toggle")
+	err := platform.Get().Run(platform.VolumeToggle)
 	if err == nil {
 		dwmblocknotify.PUT("vol toggle", 1*time.Second)
 	}
@@ -154,7 +87,7 @@ func (s *Service) SysVolumeToggle() error {
 }
 
 func (s *Service) SysMicroUp() error {
-	_, _, err := utils.RunScript("bash", "amixer set Capture 5%+")
+	err := platform.Get().Run(platform.MicUp)
 	if err == nil {
 		dwmblocknotify.PUT("micro +5%", 1*time.Second)
 	}
@@ -162,7 +95,7 @@ func (s *Service) SysMicroUp() error {
 }
 
 func (s *Service) SysMicroDown() error {
-	_, _, err := utils.RunScript("bash", "amixer set Capture 5%-")
+	err := platform.Get().Run(platform.MicDown)
 	if err == nil {
 		dwmblocknotify.PUT("micro -5%", 1*time.Second)
 	}
@@ -170,7 +103,7 @@ func (s *Service) SysMicroDown() error {
 }
 
 func (s *Service) SysMicroToggle() error {
-	_, _, err := utils.RunScript("bash", "amixer set Capture toggle")
+	err := platform.Get().Run(platform.MicToggle)
 	if err == nil {
 		dwmblocknotify.PUT("micro toggle", 1*time.Second)
 	}
@@ -178,7 +111,7 @@ func (s *Service) SysMicroToggle() error {
 }
 
 func (s *Service) SysDisplayLightUp() error {
-	_, _, err := utils.RunScript("bash", "sudo light -A 1")
+	err := platform.Get().Run(platform.BrightnessUp)
 	if err == nil {
 		dwmblocknotify.PUT("light +1%", 1*time.Second)
 	}
@@ -186,7 +119,7 @@ func (s *Service) SysDisplayLightUp() error {
 }
 
 func (s *Service) SysDisplayLightDown() error {
-	_, _, err := utils.RunScript("bash", "sudo light -N 1 && sudo light -U 1")
+	err := platform.Get().Run(platform.BrightnessDown)
 	if err == nil {
 		dwmblocknotify.PUT("light -1%", 1*time.Second)
 	}
@@ -195,196 +128,125 @@ func (s *Service) SysDisplayLightDown() error {
 
 func (s *Service) SysReset() error {
 	dwmblocknotify.PUT("reset sys default", 1*time.Second)
+	p := platform.Get()
 
-	out, _, _ := utils.RunScript("bash", "amixer scontrols")
-	hasCtl := func(name string) bool {
-		return strings.Contains(out, fmt.Sprintf("'%s'", name))
+	type step struct {
+		intent platform.Intent
+		args   []string
+		msg    string
 	}
-
-	type step struct{ cmd, msg string }
-	steps := []step{{"sudo light -S 48", "set light to 48%"}}
-	if hasCtl("Master") {
-		steps = append(steps,
-			step{"amixer set Master unmute", "amixer set Master unmute"},
-			step{"amixer set Master 80%", "set master volume to 80%"},
-		)
+	steps := []step{
+		{platform.BrightnessSet, []string{"48"}, "set light to 48%"},
+		{platform.AudioReset, nil, "reset audio defaults"},
+		{platform.KeyRepeatSet, []string{"158", "128"}, "set keyboard rate to 158 128"},
 	}
-	if hasCtl("Speaker") {
-		steps = append(steps,
-			step{"amixer set Speaker unmute", "amixer set Speaker unmute"},
-			step{"amixer set Speaker 64%", "set speaker volume to 64%"},
-		)
-	}
-	if hasCtl("Capture") {
-		steps = append(steps,
-			step{"amixer set Capture cap", "amixer set Capture cap"},
-			step{"amixer set Capture 64%", "set capture volume to 64%"},
-		)
-	}
-	if hasCtl("Headphone") {
-		steps = append(steps, step{"amixer set Headphone 64%", "set headphone volume to 64%"})
-	}
-	steps = append(steps, step{"xset r rate 158 128", "set keyboard rate to 158 128"})
-
 	for _, st := range steps {
-		if _, _, err := utils.RunScript("bash", st.cmd); err != nil {
-			dwmblocknotify.PUT(fmt.Sprintf("%s failed: %v", st.cmd, err), 3*time.Second)
-		} else {
-			dwmblocknotify.PUT(st.msg, 1*time.Second)
+		if err := p.Run(st.intent, st.args...); err != nil {
+			// macOS has no built-in equivalent for some of these; keep going so
+			// the remaining steps still apply.
+			if !strings.Contains(err.Error(), platform.ErrUnsupported.Error()) {
+				dwmblocknotify.PUT(fmt.Sprintf("%s failed: %v", st.msg, err), 3*time.Second)
+			}
+			continue
 		}
+		dwmblocknotify.PUT(st.msg, 1*time.Second)
 	}
-
 	return nil
 }
 
 func (s *Service) SysKill() error {
 	term := psl.GetConfig().Settings.DefaultTerminal
-	tmpl := `%s -e zsh -c 'ps -ef | fzf --prompt="kill -9 >" --select-1 --exit-0 | awk "{print \$2}" | xargs -r kill -9'`
-	return utils.StartScript("bash", fmt.Sprintf(tmpl, term))
+	script := `pids=$(ps -axo pid,command | tail -n +2 | fzf --prompt="kill -9 >" --select-1 --exit-0 | awk '{print $1}')
+[ -n "$pids" ] && kill -9 $pids`
+	cmd, err := platform.Get().TerminalCommand(term, script)
+	if err != nil {
+		return err
+	}
+	return utils.StartScript("bash", cmd)
 }
 
 func (s *Service) SysWifiConnect() error {
-	out, _, err := utils.RunScript("bash", "nmcli device wifi list|sed '1d'|sed '/--/ d'|awk '{print $2}'|sort|uniq|rofi -dmenu -p 'connect to wifi'")
-	if err != nil || strings.TrimSpace(out) == "" {
-		return nil
-	}
-	ssid := strings.TrimSpace(out)
-
-	out, _, err = utils.RunScript("bash", "rofi -dmenu -p 'password' < /dev/null")
+	p := platform.Get()
+	networks, err := p.WifiNetworks()
 	if err != nil {
-		return nil
+		return err
 	}
-	password := strings.TrimSpace(out)
-
-	return s.wifiConnect(ssid, password)
-}
-
-func (s *Service) wifiConnect(ssid, password string) error {
-	cmd := fmt.Sprintf("nmcli device wifi connect '%s' password '%s'", ssid, password)
-	_, stderr, err := utils.RunScript("bash", cmd)
+	ssid, err := p.Select("connect to wifi", networks)
 	if err != nil {
-		return fmt.Errorf("connect wifi failed: %s", stderr)
+		return err
 	}
-	return nil
+	if ssid == "" {
+		ssid, err = p.Input("wifi ssid", false)
+		if err != nil || strings.TrimSpace(ssid) == "" {
+			return err
+		}
+	}
+	password, err := p.Input("password", true)
+	if err != nil {
+		return err
+	}
+	if password == "" {
+		return nil // cancelled
+	}
+	return p.WifiConnect(strings.TrimSpace(ssid), password)
 }
 
 func (s *Service) SysBluetoothConnect() error {
-	out, _, err := utils.RunScript("bash", "bluetoothctl devices | rofi -dmenu -p 'connect to'")
-	if err != nil || strings.TrimSpace(out) == "" {
-		return nil
+	p := platform.Get()
+	devices, err := p.BluetoothPaired()
+	if err != nil {
+		return err
 	}
-	parts := strings.Fields(strings.TrimSpace(out))
-	if len(parts) < 2 {
-		return nil
+	if len(devices) == 0 {
+		return fmt.Errorf("no paired bluetooth devices found")
 	}
-	return s.bluetoothConnect(parts[1])
+	choice, err := p.Select("connect to", devices)
+	if err != nil || choice == "" {
+		return err
+	}
+	mac := platform.ExtractMAC(choice)
+	if mac == "" {
+		return fmt.Errorf("invalid bluetooth device: %s", choice)
+	}
+	return p.BluetoothConnect(mac)
 }
 
 func (s *Service) SysBluetoothDisconnect() error {
-	out, _, err := utils.RunScript("bash", "bluetoothctl info | grep 'Device ' | rofi -dmenu -p 'disconnect from'")
-	if err != nil || strings.TrimSpace(out) == "" {
-		return nil
+	p := platform.Get()
+	devices, err := p.BluetoothConnected()
+	if err != nil {
+		return err
 	}
-	parts := strings.Fields(strings.TrimSpace(out))
-	if len(parts) < 2 {
-		return nil
+	if len(devices) == 0 {
+		return fmt.Errorf("no connected bluetooth devices found")
 	}
-	return s.bluetoothDisconnect(parts[1])
+	choice, err := p.Select("disconnect from", devices)
+	if err != nil || choice == "" {
+		return err
+	}
+	mac := platform.ExtractMAC(choice)
+	if mac == "" {
+		return fmt.Errorf("invalid bluetooth device: %s", choice)
+	}
+	return p.BluetoothDisconnect(mac)
 }
 
 func (s *Service) SysBluetoothScanConnect() error {
-	// scan
-	devices, err := s.bluetoothScan()
+	p := platform.Get()
+	devices, err := p.BluetoothScan()
 	if err != nil {
 		return fmt.Errorf("scan bluetooth: %w", err)
 	}
 	if len(devices) == 0 {
 		return fmt.Errorf("no bluetooth devices found")
 	}
-
-	input := strings.Join(devices, "\n")
-	out, _, err := utils.RunScript("bash", fmt.Sprintf("echo '%s' | rofi -dmenu -p 'connect bluetooth'", strings.ReplaceAll(input, "'", "'\"'\"'")))
-	if err != nil || strings.TrimSpace(out) == "" {
-		return nil
+	choice, err := p.Select("connect bluetooth", devices)
+	if err != nil || choice == "" {
+		return err
 	}
-	parts := strings.Fields(strings.TrimSpace(out))
-	if len(parts) < 1 {
-		return nil
+	mac := platform.ExtractMAC(choice)
+	if mac == "" {
+		return fmt.Errorf("invalid bluetooth device: %s", choice)
 	}
-	mac := parts[0]
-
-	return s.bluetoothConnect(mac)
-}
-
-func (s *Service) bluetoothDisconnect(mac string) error {
-	_, stderr, err := utils.RunScript("bash", fmt.Sprintf("bluetoothctl disconnect %s", mac))
-	if err != nil {
-		return fmt.Errorf("disconnect failed: %s", stderr)
-	}
-	return nil
-}
-
-func (s *Service) bluetoothConnect(mac string) error {
-	for _, subcmd := range []string{
-		fmt.Sprintf("bluetoothctl pair %s", mac),
-		fmt.Sprintf("bluetoothctl trust %s", mac),
-		fmt.Sprintf("bluetoothctl connect %s", mac),
-	} {
-		_, stderr, err := utils.RunScript("bash", subcmd)
-		if err != nil {
-			return fmt.Errorf("%s failed: %s", subcmd, stderr)
-		}
-	}
-	return nil
-}
-
-func (s *Service) bluetoothScan() ([]string, error) {
-	cmd := exec.Command("bluetoothctl")
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return nil, fmt.Errorf("bluetooth stdin pipe: %w", err)
-	}
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, fmt.Errorf("bluetooth stdout pipe: %w", err)
-	}
-	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("start bluetoothctl: %w", err)
-	}
-	if _, err := stdin.Write([]byte("scan on\n")); err != nil {
-		return nil, fmt.Errorf("write scan on: %w", err)
-	}
-
-	scanner := bufio.NewScanner(stdout)
-	found := make(map[string]string)
-	re := regexp.MustCompile(`Device\s+([0-9A-F:]{17})\s+(.+)$`)
-
-	scanTimeout := 6 * time.Second
-	timer := time.After(scanTimeout)
-	scanDone := make(chan struct{})
-	go func() {
-		for scanner.Scan() {
-			line := scanner.Text()
-			if m := re.FindStringSubmatch(line); m != nil {
-				found[m[1]] = m[2]
-			}
-		}
-		close(scanDone)
-	}()
-
-	select {
-	case <-timer:
-	case <-scanDone:
-	}
-
-	if _, err := stdin.Write([]byte("scan off\nexit\n")); err != nil {
-		s.logger.WithError(err).Warn("bluetooth write scan off failed")
-	}
-	_ = cmd.Wait()
-
-	var list []string
-	for mac, name := range found {
-		list = append(list, fmt.Sprintf("%s %s", mac, name))
-	}
-	return list, nil
+	return p.BluetoothConnect(mac)
 }
