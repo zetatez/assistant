@@ -1,18 +1,13 @@
 # ============================================================
-# Assistant runtime config template (Arch Linux & macOS)
-#
+# Assistant runtime config (same structure as config.default.yaml)
 # ${ENV} placeholders are resolved from environment variables (empty if unset).
-# Values left empty fall back to a sensible per-OS default, so this template
-# works unmodified on both targets.
 # ============================================================
 
 # ── Server ─────────────────────────────────────────────
 app:
   name: assistant
   port: 4321
-  # empty = auto-detect the interface that owns the default route
-  # (Linux: wlan0/eth0..., macOS: en0/en1...)
-  interface: ""
+  interface: wlan0
   root_username: admin
   root_password: AAaa00__
 
@@ -30,75 +25,51 @@ log:
 # ── System Settings ────────────────────────────────────
 settings:
   vpn: socks5://127.0.0.1:7891
-  # empty defaults: Linux "eDP-1", macOS "Built-in"
-  default_monitor: ""
-  # empty defaults: Linux "st", macOS "Terminal"
-  # (macOS also accepts "iTerm"; other terminals must accept `-e <cmd>`)
-  default_terminal: ""
+  default_monitor: eDP-1
+  default_terminal: st
   dir_snip: ~/git/obsidian/.snippets
   dir_wallpaper: ~/Pictures/wallpapers
   dir_working_logbook: ~/git/working/logbook
-  # where AI answers are written (replaces the old hardcoded /home/... path)
-  dir_ai_output: ~/git/test
-  # Linux only (sysfs); leave empty to disable the keyboard-light endpoint
-  filepath_keyboard_brightness: ""
+  filepath_keyboard_brightness: /sys/class/leds/tpacpi::kbd_backlight/brightness
   filepath_ssh_secret: ~/.ssh/my.ssh.json
-
-  # ffmpeg capture devices; empty = per-OS default
-  #   Linux: screen=$DISPLAY audio=default video=/dev/video0
-  #   macOS: screen=1:none    audio=0       video=0:0
-  capture_screen_device: ""
-  capture_audio_device: ""
-  capture_video_device: ""
-
-  # Override any built-in platform command by intent. Keys:
-  #   volume_up/down/toggle/set, audio_reset, mic_up/down/toggle/set,
-  #   brightness_up/down/set, keyboard_light_toggle,
-  #   screen_off, suspend, reboot, shutdown, lock, key_repeat_set
-  # Templates may use {0}, {1} for positional args. Examples:
-  #   commands:
-  #     brightness_up: "brightness 0.05"        # brew install brightness
-  #     keyboard_light_toggle: "kbdlight toggle"
-  commands: {}
-
   feishu_app_id: ${FEISHU_APP_ID}
   feishu_app_secret: ${FEISHU_APP_SECRET}
   feishu_chat_id: ${FEISHU_CHAT_ID}
 
 # ── LLM (OpenAI-compatible, single provider) ───────────
 llm:
-  base_url: https://api.deepseek.com
-  api_key: ${DEEPSEEK_API_KEY}
+  base_url: http://127.0.0.1:3210/v1
+  api_key: sk-d5d0dfffa7db3152a164a650c547c189e60421d9bb746ddf
   timeout: 300
   temperature: 0.3
   text_models:
-    - deepseek-v4-flash
+    - deepseek/deepseek-v4.1-flash
   vision_models:
-    - deepseek-v4-flash-vision-exp
+    - deepseek/deepseek-v4.1-flash
 
 # ── Background Daemons ─────────────────────────────────
-# Supervised processes: started when missing, restarted every 3s if they die.
-#   name      process name checked with `pgrep -x` (must match the real binary)
-#   command   shell command used to start it
-#   precursor optional process that must already be running (e.g. dwm for X11)
-#   oneshot   true = run the command once, no liveness check/restart
-#             (use it for one-off commands such as `xset r rate 158 128`)
-# Empty procs = per-OS defaults: Linux (dwmblocks/picom/dunst), macOS (none).
 background:
   enabled: true
-  procs: []
-  # Example:
-  # procs:
-  #   - name: dwmblocks
-  #     command: dwmblocks
-  #     precursor: dwm
-  #   - name: fcitx5
-  #     command: fcitx5 -d
-  #     precursor: dwm
-  #   - name: key-repeat
-  #     command: xset r rate 158 128
-  #     precursor: dwm
-  #     oneshot: true
+  procs:
+    - name: dwmblocks
+      command: dwmblocks
+      precursor: dwm
+    - name: fcitx5
+      command: fcitx5 -d
+      precursor: dwm
+    - name: picom
+      command: picom --config ~/.config/picom/picom.conf
+      precursor: dwm
+    - name: xset
+      command: xset r rate 158 128
+      precursor: dwm
+      oneshot: true
+    - name: dunst
+      command: dunst
+      precursor: dwm
+    # - name: hhkb
+    #   command: hhkb
+    #   precursor: dwm
 
 # ── News Feed ──────────────────────────────────────────
 news:
