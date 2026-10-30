@@ -63,9 +63,11 @@ background:
     - name: xset
       command: xset r rate 158 128
       precursor: dwm
-    - name: clipmenud
-      command: clipmenud
-      precursor: dwm
+      oneshot: true
+    # clipmenu is not installed; install with `yay -S clipmenu` and re-enable.
+    # - name: clipmenud
+    #   command: clipmenud
+    #   precursor: dwm
     - name: dunst
       command: dunst
       precursor: dwm

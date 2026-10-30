@@ -77,10 +77,28 @@ llm:
     - deepseek-v4-flash-vision-exp
 
 # ── Background Daemons ─────────────────────────────────
-# empty procs = per-OS defaults: Linux (dwmblocks/picom/dunst), macOS (none).
+# Supervised processes: started when missing, restarted every 3s if they die.
+#   name      process name checked with `pgrep -x` (must match the real binary)
+#   command   shell command used to start it
+#   precursor optional process that must already be running (e.g. dwm for X11)
+#   oneshot   true = run the command once, no liveness check/restart
+#             (use it for one-off commands such as `xset r rate 158 128`)
+# Empty procs = per-OS defaults: Linux (dwmblocks/picom/dunst), macOS (none).
 background:
   enabled: true
   procs: []
+  # Example:
+  # procs:
+  #   - name: dwmblocks
+  #     command: dwmblocks
+  #     precursor: dwm
+  #   - name: fcitx5
+  #     command: fcitx5 -d
+  #     precursor: dwm
+  #   - name: key-repeat
+  #     command: xset r rate 158 128
+  #     precursor: dwm
+  #     oneshot: true
 
 # ── News Feed ──────────────────────────────────────────
 news:

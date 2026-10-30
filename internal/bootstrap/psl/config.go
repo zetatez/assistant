@@ -110,6 +110,9 @@ type BackgroundProc struct {
 	Name      string `mapstructure:"name"`
 	Command   string `mapstructure:"command"`
 	Precursor string `mapstructure:"precursor"`
+	// OneShot runs the command once (no liveness check, no restart), e.g.
+	// "xset r rate 158 128". Default false = keep the process alive.
+	OneShot bool `mapstructure:"oneshot"`
 }
 
 func (c *Config) applyDefaults() {
